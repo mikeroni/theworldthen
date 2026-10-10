@@ -1,0 +1,28 @@
+# The World Then
+
+> An interactive atlas of world history at https://theworldthen.com — a
+> time-scrubbable world map covering roughly 2000 BCE to the present, with
+> ~1,250 polity records: border-geometry frames, rulers, wars, religions,
+> languages, endonyms and cities. Free, no accounts, no tracking.
+
+The map itself is a JavaScript application and not meaningfully crawlable;
+the pages below carry the project's prose and provenance.
+
+## Pages
+
+- [The atlas](https://theworldthen.com/): the app. Deep links use a URL hash
+  (#year/polity/lens), e.g. https://theworldthen.com/#1279
+- [About](https://theworldthen.com/about.html): methodology, sources, licensing,
+  attributions, privacy, accessibility, and the honest limits of drawing 4,000
+  years of borders — every data source and asset is credited there
+
+## Key facts
+
+- Data: compiled ("baked") from Wikidata, Wikipedia, the historical-basemaps
+  project (A. Ourednik), and Natural Earth; snapshot date shown on the About page
+- Borders are approximate by design — source sheets are centuries apart in the
+  ancient world, decades in the modern; the About page discloses coarseness
+- Licenses: code PolyForm Noncommercial 1.0.0; curated content CC BY-NC-SA 4.0;
+  border geometry GPL-3.0 (inherited); Wikipedia text CC BY-SA 4.0
+- Built with AI assistance, disclosed plainly on the About page
+- Contact: see the About page

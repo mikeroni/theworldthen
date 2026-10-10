@@ -1,0 +1,6 @@
+# Pre-launch (2026-10-10): indexing blocked while the site is shared
+# privately with friends. AT LAUNCH restore:  Allow: /
+User-agent: *
+Disallow: /
+
+Sitemap: https://theworldthen.com/sitemap.xml
