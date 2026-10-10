@@ -2237,44 +2237,77 @@ function framePath(c,i,alt){
 // post-resize queue never dedupes against cleared caches. Thunks go through
 // civAt itself (idempotent, cache-filling, clamped to the record's die exactly
 // like draw's gy) so the warmer can never build geometry draw wouldn't.
-const warm={q:[],on:false,key:null,gen:0,redraw:false};
-let dragHot=-1e9; // last scrub-input timestamp; civAt's hot-drag fallback reads it
+// (208b, P1 repair — fix-verification 10-10) The first warmer re-entered the
+// scrub preview branch: civAt's fallback keyed on a GLOBAL recent-input
+// timestamp, so the background builder itself previewed, re-enqueued its own
+// popped job (twice for wrapped polities) and built nothing — a rapid seek
+// bred ~20k duplicate jobs and the corrective redraw waited 12+ seconds
+// behind them (reviewer's reproduction, confirmed in code). Now PREVIEW IS AN
+// EXPLICIT ARGUMENT threaded draw -> civAt -> mk, passed ONLY by the coalesced
+// scrub rAF; the warmer and every other caller construct unconditionally.
+// Queue discipline per the same review: `hot` (segments the finger actually
+// landed on) drains before `q` (speculative neighbors); every entry is DEDUPED
+// by record+segment via `seen` (added at push, removed at pop, so the queue is
+// bounded by DISTINCT unbuilt segments, never loop iterations); a new year
+// prunes entries >150y away (their seen keys released so a revisit can
+// re-queue); a projection refit bumps `gen` and drops everything. The
+// fallback's corrective redraw fires as soon as HOT drains — final fidelity
+// never waits behind speculative work. Slices are budgeted BETWEEN builds
+// (<=8ms check per job); one build is atomic — a single big polity's
+// interpolator (~300ms at 4x CPU throttle, ~75ms-class on device) cannot be
+// subdivided without a worker, which stays a measured follow-up, not a claim.
+const warm={q:[],hot:[],seen:new Set(),on:false,key:null,gen:0,redraw:false,holdoff:-1e9};
+const segIdxAt=(c,wy)=>{ const fr=c.frames, g=Math.min(wy,c.die);
+  let i=0; while(i<fr.length-1&&fr[i+1][0]<=g) i++; return i; };
+function warmPush(list,c,wy){
+  const k=c.name+"|"+segIdxAt(c,wy);
+  if(warm.seen.has(k)) return;
+  warm.seen.add(k); list.push([c,wy,k]);
+  if(!warm.on){ warm.on=true; requestAnimationFrame(warmSlice); }
+}
 function warmSlice(){
+  // (208b) builds YIELD to the finger: while scrub inputs are in flight the
+  // slicer idles (keeping its rAF chain alive) so an atomic ~300ms interpolator
+  // build never lands between two drag events — the drag stays preview-cheap
+  // and construction resumes the moment input pauses. Scheduling only: this
+  // timestamp can never change what a draw renders (the P1 lesson).
   const t0=performance.now();
-  while(warm.q.length&&performance.now()-t0<8){
-    const [c,wy]=warm.q.pop();
-    try{ civAt(c,wy); }catch(e){}
+  if(t0-warm.holdoff<150){ requestAnimationFrame(warmSlice); return; }
+  while((warm.hot.length||warm.q.length)&&performance.now()-t0<8){
+    const [c,wy,k]=(warm.hot.length?warm.hot:warm.q).pop();
+    warm.seen.delete(k);
+    try{ civAt(c,wy); }catch(e){} // no preview arg: always constructs; cheap no-op if built
   }
-  if(warm.q.length) requestAnimationFrame(warmSlice);
-  else{ warm.on=false;
-    // (208) a hot drag rendered keyframe fallbacks for segments that were
-    // still cold — now that everything queued is built, repaint the resting
-    // position once at full fidelity (skipping the same-year gate on purpose).
-    if(warm.redraw){ warm.redraw=false; draw._sceneYear=null; draw(+scrub.value); } }
+  // the keyframe-fallback redraw: fire the moment the finger's own segments are
+  // built — never behind the speculative tail (skip the same-year gate on purpose)
+  if(warm.redraw&&!warm.hot.length){ warm.redraw=false; draw._sceneYear=null; draw(+scrub.value); }
+  if(warm.hot.length||warm.q.length) requestAnimationFrame(warmSlice); else warm.on=false;
 }
 function queueWarm(year){
   const key=year+"|"+warm.gen;
   if(warm.key===key) return;
-  warm.key=key; warm.q.length=0;
+  warm.key=key;
+  // prune far-away pending work (a seek moved the window); release seen keys so
+  // a revisit can re-queue — built segments stay built regardless
+  const prune=list=>{ for(let i=list.length-1;i>=0;i--) if(Math.abs(list[i][1]-year)>150){ warm.seen.delete(list[i][2]); list.splice(i,1); } };
+  prune(warm.q); prune(warm.hot);
   for(const c of TL){
     if(!civPainted(c,year)&&!civPainted(c,year+60)) continue; // near the window only
     const fr=c.frames;
-    let i=0; while(i<fr.length-1&&fr[i+1][0]<=Math.min(year,c.die)) i++;
+    const i=segIdxAt(c,year);
     for(const j of [i+1,i,i-1]){ // next first (playback direction), then current, then back
       if(j<0||j>=fr.length-1) continue;
       if(c._interp[j]) continue; // primary morph already built (hold/far segs rebuild cheap)
-      const wy=Math.min((fr[j][0]+fr[j+1][0])/2,c.die);
-      warm.q.push([c,wy]);
+      warmPush(warm.q,c,Math.min((fr[j][0]+fr[j+1][0])/2,c.die));
     }
   }
-  if(warm.q.length&&!warm.on){ warm.on=true; requestAnimationFrame(warmSlice); }
 }
 function project(){
   // (180) viewport refit: recompute the CHEAP viewport-dependent tables and drop the
   // lazy path/morph caches (their coordinates are projection-scaled). No path strings
   // are built here — see framePath above.
   wrapCheck();
-  warm.gen++; warm.q.length=0; // (208) cleared caches invalidate any warmed/queued state
+  warm.gen++; warm.q.length=0; warm.hot.length=0; warm.seen.clear(); warm.key=null; // (208b) cleared caches invalidate all warmed/queued/deduped state
   TL.forEach(c=>{
     c._paths=null; c._paths2=null;
     c._interp={}; c._interp2={}; // invalidate morph caches on resize
@@ -2712,7 +2745,7 @@ const tailEndOf=c=>{ const die=c.die; // (205) curated die, in lockstep with civ
   return Math.max(die+fadeOutOf(c), c.hold!=null?c.hold:die); };
 const civPainted=(c,year)=>{ const fr=c.frames;
   return year>=Math.min(c.born,fr[0][0])-fadeInOf(c) && year<=tailEndOf(c); };
-function civAt(c,year){
+function civAt(c,year,preview){ // (208b) preview is EXPLICIT: only the coalesced scrub draw passes it
   const fr=c.frames;
   const dataFirst=fr[0][0], dataLast=fr[fr.length-1][0];
   // (205) THE ENVELOPE DIE IS THE CURATED DIE, NEVER THE LAST SHEET FRAME. 17 records
@@ -2759,25 +2792,24 @@ function civAt(c,year){
     }
     // morph the PRIMARY ring only; island subpaths cross-fade (see splitSubs)
     let seg=cache[i];
-    if(!seg&&performance.now()-dragHot<200){
-      // (208) SCRUB COLD-SEGMENT FALLBACK. Building a sheet's interpolators
-      // synchronously inside a scrub-initiated draw was the measured ~700ms
-      // finger stall (a fast drag reaches boundaries faster than the
-      // pre-warmer can build them, and a single track-jump into an unvisited
-      // era froze the same way). dragHot is set ONLY by the scrub input
-      // handler, so every scrub-initiated draw (its coalesced rAF fires well
-      // inside the 200ms window) renders an unbuilt segment as its EARLIER
-      // KEYFRAME instead of building: borders step rather than morph while
-      // the finger owns the clock. The segment is queued, the warmer builds
-      // it off the hot path, and warmSlice repaints the resting position at
-      // full fidelity the moment the queue drains — the frame you stop on is
-      // always the true morph, usually well under a second later. Already-
-      // warm segments morph normally even mid-drag. Playback (tick) and
-      // every other draw caller never take this branch: they build
-      // synchronously exactly as before, with the pre-warmer absorbing the
-      // cost ahead of the clock.
-      warm.q.push([c,gy]); warm.redraw=true;
-      if(!warm.on){ warm.on=true; requestAnimationFrame(warmSlice); }
+    if(!seg&&preview){
+      // (208/208b) SCRUB COLD-SEGMENT FALLBACK. Building a sheet's
+      // interpolators synchronously inside a scrub-initiated draw was the
+      // measured ~700ms finger stall (a fast drag reaches boundaries faster
+      // than the pre-warmer can build them, and a single track-jump into an
+      // unvisited era froze the same way). `preview` is an EXPLICIT argument
+      // passed only by the scrub rAF's draw — the fix-verification's P1: the
+      // first version keyed on a global recent-input timestamp, which the
+      // background warmer itself matched, so it previewed its own jobs back
+      // onto the queue instead of building (20k duplicates, 12s of stale
+      // geometry). A previewing draw renders an unbuilt segment as its
+      // EARLIER KEYFRAME: borders step rather than morph while the finger
+      // owns the clock; the segment goes on the deduped PRIORITY queue and
+      // the drain redraw repaints the resting position at full fidelity as
+      // soon as the finger's own segments are built. The frame you stop on
+      // is always the true morph. Already-warm segments morph normally even
+      // mid-drag; playback and every other caller never preview.
+      warmPush(warm.hot,c,gy); warm.redraw=true;
       return [{d:P(i),alpha:env,env}];
     }
     if(!seg){
@@ -2879,7 +2911,7 @@ const tAt=y=>(y-YEAR_MIN)/(YEAR_MAX-YEAR_MIN)*1000;
 // so EVERYTHING aligned to the knob (fill dot, solo loop caps) must share this one
 // formula — two hand-copied versions drifted risk into every thumb-size change (1b)
 const knobOff=t=>8-16*(t/1000);
-function draw(t,sceneSkip){ // (a legacy `immediate` transition-suppression param was removed 07-19 — it had no reads)
+function draw(t,sceneSkip,preview){ // (a legacy `immediate` transition-suppression param was removed 07-19 — it had no reads; (208b) preview threads to civAt, scrub rAF only)
   const year=yearAt(t), pos=t/10;
   fill.style.width=pos+"%";
   // dot rides the NATIVE thumb's track (center 8px..100%-8px for the 16px thumb),
@@ -2914,7 +2946,7 @@ function draw(t,sceneSkip){ // (a legacy `immediate` transition-suppression para
   const layers=[]; const activeCivs=[];
   for(const c of TL){
     let ls;
-    try{ ls=civAt(c,year); }catch(err){ continue; } // never let one civ break the frame
+    try{ ls=civAt(c,year,preview); }catch(err){ continue; } // never let one civ break the frame
     if(!ls) continue;
     let civAlpha=0;
     ls.forEach((l,k)=>{
@@ -6492,9 +6524,9 @@ scrub.addEventListener("input",()=>{ let v=+scrub.value;
     if(Math.abs(v-lo)<6) v=lo; else if(Math.abs(v-hi)<6) v=hi;
     scrub.value=v;
   }
-  playPos=v; dragHot=performance.now(); // arms civAt's hot-drag cold-segment fallback
+  playPos=v; warm.holdoff=performance.now(); // builds yield while the finger moves
   if(!scrubRaf) scrubRaf=requestAnimationFrame(()=>{ scrubRaf=0;
-    const cv=+scrub.value; draw(cv, yearAt(cv)===draw._sceneYear); });
+    const cv=+scrub.value; draw(cv, yearAt(cv)===draw._sceneYear, true); }); // preview=true: the ONLY previewing caller
   takeClock();
   cometCard._resume=false; }); // dragging time takes the clock too
 // grabbing time pauses playback; releasing RESUMES it if it was playing — video-player
