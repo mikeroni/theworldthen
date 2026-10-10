@@ -2224,11 +2224,57 @@ function framePath(c,i,alt){
   }
   return d;
 }
+// (208) SEGMENT PRE-WARMER. The mobile-perf probe measured the playback/drag
+// stall class exactly: crossing a sheet boundary COLD costs one ~700ms task at
+// 4x CPU (every polity on that sheet builds its flubber interpolator + path
+// strings in the same frame, because frame years are global), while the SAME
+// crossing warmed produces zero long tasks. So after every full scene draw the
+// warmer queues the current/next/previous unbuilt segments of records near the
+// clock and builds them through civAt in <=8ms slices, one slice per frame —
+// the clock arrives at sheets that are already warm. Bounds: only segments
+// adjacent to visited years are built (the same ones real usage builds), the
+// queue rebuilds per integer year, and a projection refit bumps `gen` so a
+// post-resize queue never dedupes against cleared caches. Thunks go through
+// civAt itself (idempotent, cache-filling, clamped to the record's die exactly
+// like draw's gy) so the warmer can never build geometry draw wouldn't.
+const warm={q:[],on:false,key:null,gen:0,redraw:false};
+let dragHot=-1e9; // last scrub-input timestamp; civAt's hot-drag fallback reads it
+function warmSlice(){
+  const t0=performance.now();
+  while(warm.q.length&&performance.now()-t0<8){
+    const [c,wy]=warm.q.pop();
+    try{ civAt(c,wy); }catch(e){}
+  }
+  if(warm.q.length) requestAnimationFrame(warmSlice);
+  else{ warm.on=false;
+    // (208) a hot drag rendered keyframe fallbacks for segments that were
+    // still cold — now that everything queued is built, repaint the resting
+    // position once at full fidelity (skipping the same-year gate on purpose).
+    if(warm.redraw){ warm.redraw=false; draw._sceneYear=null; draw(+scrub.value); } }
+}
+function queueWarm(year){
+  const key=year+"|"+warm.gen;
+  if(warm.key===key) return;
+  warm.key=key; warm.q.length=0;
+  for(const c of TL){
+    if(!civPainted(c,year)&&!civPainted(c,year+60)) continue; // near the window only
+    const fr=c.frames;
+    let i=0; while(i<fr.length-1&&fr[i+1][0]<=Math.min(year,c.die)) i++;
+    for(const j of [i+1,i,i-1]){ // next first (playback direction), then current, then back
+      if(j<0||j>=fr.length-1) continue;
+      if(c._interp[j]) continue; // primary morph already built (hold/far segs rebuild cheap)
+      const wy=Math.min((fr[j][0]+fr[j+1][0])/2,c.die);
+      warm.q.push([c,wy]);
+    }
+  }
+  if(warm.q.length&&!warm.on){ warm.on=true; requestAnimationFrame(warmSlice); }
+}
 function project(){
   // (180) viewport refit: recompute the CHEAP viewport-dependent tables and drop the
   // lazy path/morph caches (their coordinates are projection-scaled). No path strings
   // are built here — see framePath above.
   wrapCheck();
+  warm.gen++; warm.q.length=0; // (208) cleared caches invalidate any warmed/queued state
   TL.forEach(c=>{
     c._paths=null; c._paths2=null;
     c._interp={}; c._interp2={}; // invalidate morph caches on resize
@@ -2713,6 +2759,27 @@ function civAt(c,year){
     }
     // morph the PRIMARY ring only; island subpaths cross-fade (see splitSubs)
     let seg=cache[i];
+    if(!seg&&performance.now()-dragHot<200){
+      // (208) SCRUB COLD-SEGMENT FALLBACK. Building a sheet's interpolators
+      // synchronously inside a scrub-initiated draw was the measured ~700ms
+      // finger stall (a fast drag reaches boundaries faster than the
+      // pre-warmer can build them, and a single track-jump into an unvisited
+      // era froze the same way). dragHot is set ONLY by the scrub input
+      // handler, so every scrub-initiated draw (its coalesced rAF fires well
+      // inside the 200ms window) renders an unbuilt segment as its EARLIER
+      // KEYFRAME instead of building: borders step rather than morph while
+      // the finger owns the clock. The segment is queued, the warmer builds
+      // it off the hot path, and warmSlice repaints the resting position at
+      // full fidelity the moment the queue drains — the frame you stop on is
+      // always the true morph, usually well under a second later. Already-
+      // warm segments morph normally even mid-drag. Playback (tick) and
+      // every other draw caller never take this branch: they build
+      // synchronously exactly as before, with the pre-warmer absorbing the
+      // cost ahead of the clock.
+      warm.q.push([c,gy]); warm.redraw=true;
+      if(!warm.on){ warm.on=true; requestAnimationFrame(warmSlice); }
+      return [{d:P(i),alpha:env,env}];
+    }
     if(!seg){
       const pa=splitSubs(P(i)), pb=splitSubs(P(i+1));
       let interp;
@@ -2812,7 +2879,7 @@ const tAt=y=>(y-YEAR_MIN)/(YEAR_MAX-YEAR_MIN)*1000;
 // so EVERYTHING aligned to the knob (fill dot, solo loop caps) must share this one
 // formula — two hand-copied versions drifted risk into every thumb-size change (1b)
 const knobOff=t=>8-16*(t/1000);
-function draw(t){ // (a legacy `immediate` transition-suppression param was removed 07-19 — it had no reads)
+function draw(t,sceneSkip){ // (a legacy `immediate` transition-suppression param was removed 07-19 — it had no reads)
   const year=yearAt(t), pos=t/10;
   fill.style.width=pos+"%";
   // dot rides the NATIVE thumb's track (center 8px..100%-8px for the 16px thumb),
@@ -2824,6 +2891,24 @@ function draw(t){ // (a legacy `immediate` transition-suppression param was remo
   // assistive tech hears the YEAR, not the raw 0-1000 track value
   if(draw._vt!==year){ draw._vt=year;
     scrub.setAttribute("aria-valuetext",fmtYear(year)+" · "+epochOf(year)); }
+
+  // (208) SAME-YEAR SCENE SKIP — yearAt rounds to an INTEGER year and everything
+  // below this line is a pure function of that integer plus UI state, while the
+  // playback tick calls draw on EVERY animation frame (several frames per year at
+  // normal speed: the mobile-perf round measured ~2/3 of playback frames redrawing
+  // an identical scene). sceneSkip is OPT-IN AND ONLY THE HOT CALLERS PASS IT
+  // (tick + the coalesced scrub rAF): every state change that re-renders the scene
+  // at an unchanged year — mode/cb toggles, solo, spotlight, panel open, legend
+  // layers, resize/project, zoom's debounced label refresh, enrichment arrival —
+  // reaches draw() through its own call WITHOUT the flag and repaints in full
+  // (then records _sceneYear, so the next tick frame rightly skips what it just
+  // painted). A hypothetical site that painted no draw call would self-heal at the
+  // next year crossing (~120 ms at 1x playback) instead of the next frame — the
+  // bounded cost of the skip. Chrome above (fill/knob/year text/aria) still runs
+  // every frame so the transport stays pixel-smooth; century audio + the comet
+  // watcher stay on the skip path (both are internally year-gated and cheap).
+  if(sceneSkip&&draw._sceneYear===year){ SND.century(year); cometWatch(year); return; }
+  draw._sceneYear=year;
 
   // flatten: each civ yields 1-2 layers; give each a stable key
   const layers=[]; const activeCivs=[];
@@ -2849,6 +2934,9 @@ function draw(t){ // (a legacy `immediate` transition-suppression param was remo
   // WAY back — the point is match-finding, not ambience. Timer-cleared, no stop UI.
   const sf=(spotFam&&spotFam.mode===colorMode)?spotFam.fam:null;
   const inFam=d=>sf!=null&&paintKeyOf(d.c,year)[0]===sf;
+  // (208) colorOf is pure in (c, year) and year is fixed for this whole draw
+  const colCache=new Map();
+  const colOf=c=>{ let v=colCache.get(c); if(v===undefined){ v=colorOf(c,year); colCache.set(c,v); } return v; };
   gCiv.selectAll("path").data(layers,d=>d.key).join(
     enter=>enter.append("path").attr("class","civ")
       .on("mousemove",showTip).on("mouseleave",hideTip).on("click",(e,d)=>onCivClick(d.c)),
@@ -2856,12 +2944,18 @@ function draw(t){ // (a legacy `immediate` transition-suppression param was remo
     // a fading polity can finish dying WHILE hovered — removal fires no mouseleave,
     // so take the stranded tooltip down with the path (input review 07-21)
     exit=>exit.each(function(d){ if(tip.classList.contains("on")&&!tip._evQid&&!tip._city&&this.matches(":hover")) hideTip(); }).remove()
-  ).attr("d",d=>d.d)
+  // (208) the d attribute is the expensive write (giant path strings) and for
+  // held/cross-fade segments civAt hands back the SAME cached string object year
+  // after year — compare by identity and skip the unchanged ones; a mid-morph
+  // layer gets a fresh interpolated string every year and always writes. The
+  // element remembers what it last wrote (__d), so enter nodes always write.
+  ).each(function(d){ if(this.__d!==d.d){ this.setAttribute("d",d.d); this.__d=d.d; } })
    .classed("at-war",d=>warSet.has(d.c.name))
    .classed("fam-spot",inFam)
    // color is set every frame (not just on enter): in religion mode it depends on the
    // YEAR (Rome flips pagan→Christian at 380), and the mode toggle repaints in place.
-   .attr("fill",d=>colorOf(d.c,year)).attr("stroke",d=>colorOf(d.c,year))
+   // (208) memoized per draw — one lens lookup per polity, not two per layer.
+   .attr("fill",d=>colOf(d.c)).attr("stroke",d=>colOf(d.c))
    .attr("fill-opacity",d=>{
      if(sf!=null) return (inFam(d) ? 0.62 : 0.10) * d.alpha;
      if(soloCiv){
@@ -2970,6 +3064,7 @@ function draw(t){ // (a legacy `immediate` transition-suppression param was remo
   // (full mode is sig-gated inside renderPanel — it only rebuilds on era renames)
   if(panelCiv) renderPanel();
   refreshTip(); // (169) the card is clock-true, so it must follow the clock
+  queueWarm(year); // (208) pre-build the adjacent sheet segments in sliced frames
 }
 
 // ---- event markers: the CLICKED polity's located events, time-synced to the scrubber.
@@ -4840,12 +4935,14 @@ function tick(ts){
     const lo=tAt(Math.max(YEAR_MIN,soloCiv.born-40)), hi=tAt(Math.min(YEAR_MAX,soloCiv.die+40));
     if(v>=hi){ v=playPos=lo; tick._beat=null; // loop back to start
       if(!soloCiv._noCam&&!REDUCED) flyToCiv(soloCiv); } // tour restarts: re-frame the whole life
-    scrub.value=v; draw(v); raf=requestAnimationFrame(tick); return;
+    // (208) the tick is the hot path: skip the scene when the integer year is
+    // unchanged (draw still updates the transport chrome every frame)
+    scrub.value=v; draw(v,true); raf=requestAnimationFrame(tick); return;
   }
   if(v>=1000){scrub.value=1000;draw(1000);
     speedBtn.classList.remove("dim"); // don't let a dwell's dim outlive the track
     stop();return;}
-  scrub.value=v;draw(v);raf=requestAnimationFrame(tick);
+  scrub.value=v;draw(v,true);raf=requestAnimationFrame(tick); // (208) same-year scene skip
 }
 // the glyph swap is the SIGHTED state cue; the accessible name has to swap with it or
 // the button keeps announcing "Play timeline" while it is pausing (persona F 08-10,
@@ -6378,13 +6475,26 @@ document.addEventListener("pointerdown",(e)=>{
   const dir={zin:1,zout:-1,panelClose:-1,panelGrip:-1,introGo:1}[b.id]||0;
   SND.click(dir);
 });
+// (208) SCRUB COALESCING — each native input event used to call draw()
+// synchronously, so a drag queued a full map repaint PER EVENT and the phone
+// fell behind its own finger (the reported "nightmare" slider). Now the
+// handler keeps its synchronous state work (magnetism, playPos, clock
+// ownership) and schedules AT MOST ONE scene per animation frame; the
+// callback reads scrub.value at fire time, so the LAST position always wins
+// and the thumb, year text, and map converge on the release value within a
+// frame. Same-year micro-moves inside one ~4-year track step take the scene
+// skip (chrome still follows the finger). No separate flush-on-release is
+// needed: a release fires no event the pending rAF hasn't already covered.
+let scrubRaf=0;
 scrub.addEventListener("input",()=>{ let v=+scrub.value;
   if(soloCiv){ // gentle magnetism on the story's endpoints (6 track units ≈ 24 years)
     const lo=tAt(Math.max(YEAR_MIN,soloCiv.born-40)), hi=tAt(Math.min(YEAR_MAX,soloCiv.die+40));
     if(Math.abs(v-lo)<6) v=lo; else if(Math.abs(v-hi)<6) v=hi;
     scrub.value=v;
   }
-  playPos=v; draw(v);
+  playPos=v; dragHot=performance.now(); // arms civAt's hot-drag cold-segment fallback
+  if(!scrubRaf) scrubRaf=requestAnimationFrame(()=>{ scrubRaf=0;
+    const cv=+scrub.value; draw(cv, yearAt(cv)===draw._sceneYear); });
   takeClock();
   cometCard._resume=false; }); // dragging time takes the clock too
 // grabbing time pauses playback; releasing RESUMES it if it was playing — video-player
