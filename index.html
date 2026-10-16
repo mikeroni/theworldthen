@@ -877,7 +877,7 @@
       of the app frame; About keeps the true top-level banner/contentinfo. -->
  <main id="main" aria-label="Map">
   <header>
-    <div class="brand"><span class="bx">The</span> <b>World</b> <span class="bx">Then</span></div>
+    <div class="brand"><span class="bx">The</span> <b>World</b> <span class="bx" id="brandEra">Then</span></div>
     <div class="tag">An interactive atlas of world history</div>
     <a class="about-link" href="about.html" target="_blank" rel="noopener">about</a>
   </header>
@@ -2978,6 +2978,7 @@ const scrub=document.getElementById("scrub"),fill=document.getElementById("fill"
 const yearAt=t=>Math.round(YEAR_MIN+(YEAR_MAX-YEAR_MIN)*(t/1000));
 const tAt=y=>(y-YEAR_MIN)/(YEAR_MAX-YEAR_MIN)*1000;
 const TITLE0=document.title; // (209) the exact tab title to restore when leaving the final year
+const brandEra=document.getElementById("brandEra"); // (212) the masthead's last word flips with it
 
 // thumb-center offset at track value t: the 16px native thumb rides 8px..width-8px,
 // so EVERYTHING aligned to the knob (fill dot, solo loop caps) must share this one
@@ -2995,14 +2996,14 @@ function draw(t,sceneSkip,preview){ // (a legacy `immediate` transition-suppress
   // assistive tech hears the YEAR, not the raw 0-1000 track value
   if(draw._vt!==year){ draw._vt=year;
     scrub.setAttribute("aria-valuetext",fmtYear(year)+" · "+epochOf(year)); }
-  // (209) the tab reads "The World Now" at the final year — the TAB TITLE ONLY (the
-  // masthead, og:title and the share sheet keep the name: one name for crawlers and
-  // link previews); the exact original comes back on leaving; written on the state
-  // change, never per frame. draw is the one year sink, so deep links, typed years,
-  // key seeks, drags and playback all route through here. YEAR_MAX is the clock's
-  // year at page start — a tab left open across New Year's rolls over on reload.
+  // (209) the tab reads "The World Now" at the final year; (212, Mike) the masthead's
+  // last word flips with it (og:title and the share sheet keep the name: one name for
+  // crawlers and link previews); the exact originals come back on leaving; written on
+  // the state change, never per frame. draw is the one year sink, so deep links, typed
+  // years, key seeks, drags and playback all route through here. YEAR_MAX is the
+  // clock's year at page start — a tab left open across New Year's rolls over on reload.
   const atNow=year>=YEAR_MAX;
-  if(draw._now!==atNow){ draw._now=atNow; document.title=atNow?TITLE0.replace("The World Then","The World Now"):TITLE0; }
+  if(draw._now!==atNow){ draw._now=atNow; document.title=atNow?TITLE0.replace("The World Then","The World Now"):TITLE0; brandEra.textContent=atNow?"Now":"Then"; }
 
   // (208) SAME-YEAR SCENE SKIP — yearAt rounds to an INTEGER year and everything
   // below this line is a pure function of that integer plus UI state, while the
