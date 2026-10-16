@@ -526,6 +526,33 @@
   .epoch{display:block;font-size:clamp(10px,1.1vw,13px);font-weight:500;letter-spacing:3px;
     text-transform:uppercase;color:var(--magenta);margin-bottom:6px;font-family:'Inter';
     text-shadow:0 0 2px var(--void),0 0 5px var(--void),0 0 10px var(--void)}
+  /* (209) the big year is a BUTTON (go to a year): a faint dotted underline is the
+     persistent edit cue — on every device, not a hover-only hint — and hover/focus
+     brighten it. The card around it stays pointer-inert; only the year takes clicks. */
+  .yr-btn{all:unset;display:inline;pointer-events:auto;cursor:pointer;color:inherit;font:inherit;
+    letter-spacing:inherit;text-shadow:inherit;border-radius:6px;
+    text-decoration:underline dotted var(--ink-faint);text-decoration-thickness:2px;text-underline-offset:.08em}
+  .yr-btn:hover,.yr-btn:focus-visible{text-decoration-color:var(--cyan)}
+  .yr-btn:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+  .yr-edit{position:absolute;left:clamp(14px,3vw,30px);bottom:170px;z-index:12;width:min(300px,calc(100vw - 28px));
+    background:rgba(13,10,20,.94);border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+    display:flex;flex-direction:column;gap:8px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  .yr-edit[hidden]{display:none}
+  .yr-lab{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--magenta);font-family:'Inter'}
+  .yr-row{display:flex;gap:6px;align-items:center}
+  .yr-in{flex:1;min-width:0;width:100%;font:600 18px 'Fraunces',Georgia,'Times New Roman',serif;color:var(--ink);
+    background:var(--void-2);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+  .yr-in:focus{outline:2px solid var(--cyan);outline-offset:1px;border-color:var(--cyan)}
+  .yr-in[aria-invalid="true"]{border-color:var(--magenta)}
+  .yr-era{display:flex;flex:none;border:1px solid var(--line);border-radius:20px;overflow:hidden}
+  .yr-eb,.yr-go,.yr-cancel{font-size:11px;letter-spacing:.5px;color:var(--ink-dim);background:var(--void-2);
+    border:1px solid var(--line);padding:7px 12px;cursor:pointer;border-radius:20px;transition:.2s}
+  .yr-eb{border:0;border-radius:0;padding:7px 10px}
+  .yr-eb[aria-pressed="true"]{color:var(--ink);background:var(--line)}
+  .yr-go{color:var(--ink);border-color:var(--cyan)}
+  .yr-go:hover,.yr-cancel:hover,.yr-eb:hover{color:var(--ink)}
+  .yr-err{font-size:11px;color:var(--magenta);line-height:1.4}
+  .yr-err:empty{display:none}
   .transport{display:flex;align-items:center;gap:18px;padding:14px 26px 22px;z-index:10}
   .play{width:46px;height:46px;flex:none;border-radius:50%;border:1px solid var(--line);
     background:var(--void-2);color:var(--ink);cursor:pointer;display:grid;place-items:center;transition:.2s}
@@ -586,6 +613,21 @@
      11px label to 2.66:1. State now reads through the label text + a receded
      border; the text itself stays at ink-faint (>=4.5:1 on --void-2). */
   .speed.dim{color:var(--ink-faint);border-color:#262038}
+  /* (209) keyboard help: the shortcut table above the keys button, on hover (hover-
+     capable devices) and on keyboard focus (any device — an external keyboard on a
+     tablet counts). Rows the switch turns off keep readable contrast AND say "(off)". */
+  .keys-wrap{position:relative;flex:none;display:flex}
+  .keys-help{position:absolute;right:0;bottom:calc(100% + 10px);z-index:20;width:max-content;
+    max-width:min(330px,calc(100vw - 28px));background:rgba(13,16,24,.96);border:1px solid var(--line);
+    border-radius:10px;padding:10px 12px;font-size:11.5px;color:var(--ink-dim);text-align:left;letter-spacing:0;
+    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  .keys-help[hidden]{display:none}
+  .keys-help .kh-head{color:var(--ink);font-weight:600;margin-bottom:6px}
+  .keys-help table{border-collapse:collapse}
+  .keys-help td{padding:2px 0;vertical-align:top;line-height:1.4}
+  .keys-help td:first-child{white-space:nowrap;padding-right:12px;color:var(--ink)}
+  .keys-help kbd{font:inherit;color:var(--cyan)}
+  .keys-help tr.off td,.keys-help tr.off kbd{color:var(--ink-faint)}
   /* narrow STAGE (small window OR desktop with the panel open): the timeline gets its
      own full-width row and the buttons wrap below — resize() toggles .narrow by the
      actual stage width, which a viewport media query can't see */
@@ -747,6 +789,10 @@
     .about-link{padding:5px 10px;letter-spacing:1.4px}
     .info{max-width:70vw;bottom:14px}
     .era-year{font-size:clamp(34px,12vw,54px)}
+    /* (209) the go-to-year editor pins to the TOP on phones: the software keyboard
+       covers the bottom third, where the year readout (and a readout-anchored
+       editor) would sit — openYrEdit leaves the bottom offset empty on small UI */
+    .yr-edit{top:12px;bottom:auto;left:12px;right:12px;width:auto}
     /* (transport wrapping is handled by .transport.narrow — toggled by stage width) */
     .tick{font-size:9px}
     /* panel becomes a bottom sheet; app stacks vertically, map stays above */
@@ -845,8 +891,22 @@
          appearance to AT. bootApp removes it; the boot-failure screen replaces it. -->
     <div class="boot-note" id="bootNote" role="status">Loading the map…</div>
     <div class="info">
-      <div class="era-year"><span class="epoch" id="epoch"></span><span id="yr"></span></div>
+      <div class="era-year"><span class="epoch" id="epoch"></span><button type="button" class="yr-btn" id="yrBtn" aria-label="Go to a year" title="Type a year to jump there (G)" aria-disabled="true"><span id="yr"></span></button></div>
     </div>
+    <!-- (209) go-to-year editor: opened by the big year (click/tap) or G. Renders the
+         destination on Go only, never per keystroke; year 0 and junk are refused with
+         a message, never silently re-dated. Small screens pin it to the TOP of the
+         stage so a software keyboard can't cover it (the year readout sits at the
+         bottom); desktop floats it just above the readout. -->
+    <form class="yr-edit" id="yrEdit" hidden aria-label="Go to a year" autocomplete="off" novalidate>
+      <label class="yr-lab" for="yrIn">Go to year</label>
+      <div class="yr-row">
+        <input class="yr-in" id="yrIn" type="text" inputmode="numeric" enterkeyhint="go" maxlength="9" autocomplete="off" aria-describedby="yrErr">
+        <div class="yr-era" role="group" aria-label="Era"><button type="button" class="yr-eb" data-era="BCE" aria-pressed="false">BCE</button><button type="button" class="yr-eb" data-era="CE" aria-pressed="true">CE</button></div>
+      </div>
+      <div class="yr-row"><button type="submit" class="yr-go">Go</button><button type="button" class="yr-cancel" id="yrCancel">Cancel</button></div>
+      <div class="yr-err" id="yrErr" role="alert"></div>
+    </form>
     <div class="story-cap off" id="storyCap"></div>
     <div class="zoomctl">
       <button id="zin" aria-label="Zoom in" title="Zoom in">+</button>
@@ -880,7 +940,13 @@
     <button class="speed" id="sound" aria-disabled="true" title="Ambient sound & UI audio (synthesized — nothing to download)" aria-label="Toggle ambient sound"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.6"/><circle cx="17.5" cy="16" r="2.6"/></svg> Off</button>
     <!-- (189 A01b) WCAG 2.1.4: letter/symbol shortcuts get a persistent off switch;
          label text is appended as a text node by keysLabel() -->
-    <button class="speed" id="keys" aria-disabled="true" title="Single-key shortcuts (K J L M F H +−) — switch off if they clash with your keyboard or speech software" aria-label="Toggle single-key shortcuts"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.2" y="6.2" width="19.6" height="11.6" rx="2.2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h.01M18 14h.01M9.5 14h5"/></svg></button>
+    <span class="keys-wrap"><button class="speed" id="keys" aria-disabled="true" aria-label="Toggle single-key shortcuts" aria-describedby="keysHelp"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.2" y="6.2" width="19.6" height="11.6" rx="2.2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h.01M18 14h.01M9.5 14h5"/></svg></button>
+    <!-- (209) the shortcut table as hover/focus help — its OWN surface, not the map's
+         .tip (that one is pointer-inert and aria-hidden by design): hoverable, no
+         timeout, Escape parks it; non-interactive, so focus stays on the button and
+         the table is the button's accessible description. Replaces the bare native
+         title the button used to carry (a native tooltip would double up with it). -->
+    <div class="keys-help" id="keysHelp" role="tooltip" hidden></div></span>
   </div>
  </main>
  <!-- tabindex=-1 so setLegendOpen can hand focus here when the legend sheet departs;
@@ -1063,7 +1129,7 @@ function bootApp(){
 // own enrichment-pending rule further down.
 document.body.classList.remove("booting");
 { const bn=document.getElementById("bootNote"); if(bn) bn.remove();
-  for(const id of ["play","scrub","speed","mode","surprise","share","sound","keys","legendToggle"]){
+  for(const id of ["play","scrub","speed","mode","surprise","share","sound","keys","legendToggle","yrBtn"]){
     const el=document.getElementById(id); if(el) el.removeAttribute("aria-disabled");
   } }
 const YEAR_MIN=-2000, DATA_END=2000,
@@ -2919,6 +2985,7 @@ const scrub=document.getElementById("scrub"),fill=document.getElementById("fill"
       epochEl=document.getElementById("epoch");
 const yearAt=t=>Math.round(YEAR_MIN+(YEAR_MAX-YEAR_MIN)*(t/1000));
 const tAt=y=>(y-YEAR_MIN)/(YEAR_MAX-YEAR_MIN)*1000;
+const TITLE0=document.title; // (209) the exact tab title to restore when leaving the final year
 
 // thumb-center offset at track value t: the 16px native thumb rides 8px..width-8px,
 // so EVERYTHING aligned to the knob (fill dot, solo loop caps) must share this one
@@ -2936,6 +3003,14 @@ function draw(t,sceneSkip,preview){ // (a legacy `immediate` transition-suppress
   // assistive tech hears the YEAR, not the raw 0-1000 track value
   if(draw._vt!==year){ draw._vt=year;
     scrub.setAttribute("aria-valuetext",fmtYear(year)+" · "+epochOf(year)); }
+  // (209) the tab reads "The World Now" at the final year — the TAB TITLE ONLY (the
+  // masthead, og:title and the share sheet keep the name: one name for crawlers and
+  // link previews); the exact original comes back on leaving; written on the state
+  // change, never per frame. draw is the one year sink, so deep links, typed years,
+  // key seeks, drags and playback all route through here. YEAR_MAX is the clock's
+  // year at page start — a tab left open across New Year's rolls over on reload.
+  const atNow=year>=YEAR_MAX;
+  if(draw._now!==atNow){ draw._now=atNow; document.title=atNow?TITLE0.replace("The World Then","The World Now"):TITLE0; }
 
   // (208) SAME-YEAR SCENE SKIP — yearAt rounds to an INTEGER year and everything
   // below this line is a pure function of that integer plus UI state, while the
@@ -5160,13 +5235,46 @@ lgSearch.addEventListener("keydown",(e)=>{
   if(c){ SND.click(); jumpToCiv(c); setLegendOpen(false); lgSearch.value=""; lgFilter=""; lgSearch.blur(); }
 });
 
-// ---- keyboard: space/k play/pause · ←/→ step 10yr (shift: 100) · j/l step
-// 100yr (shift: 500 — the era jump) · +/- zoom · h (or Home) reset view like the
+// ---- keyboard: space/k play/pause · ←/→ step 1yr (shift: 10) · j/l step 10yr
+// (shift: 100) · g go to a year · +/- zoom · h (or Home) reset view like the
 // ⌂ button · ↑/↓ speed · m mute · f fullscreen · esc closes
 // (media/map conventions: +/- zoom like maps, j/k/l + m/f like video players —
 // j/l are the arrows' bigger sibling there too; ↑/↓ takes speed because we
 // have no volume to give it). (189 A01b): every PRINTABLE key here can be
-// switched off via keysOn — see the gate below. ----
+// switched off via keysOn — see the gate below. (209): the steps shrank from
+// 10/100 + 100/500 to 1/10 + 10/100 — fine seeking was the ask (Mike 10-15);
+// era-scale jumps are the slider's job. ----
+// (209) ONE seek path for every PRECISE year request (keys, the typed year):
+//   - integer-year anchored: the track's 0.1 step is ~0.4 years, so adding a
+//     units delta (the old handler) repeated or skipped displayed years at 1yr
+//     (1001, 1002, 1003, 1004, 1004, ...) — and the old 10-year step was really
+//     10.07 (ten presses moved 100.7). tAt(year) snapped to 0.1 round-trips every
+//     integer year through yearAt (all 4,027 probed);
+//   - no year 0: fmtYear calls both 0 and 1 "1 CE", so a step that LANDS on 0
+//     moves on to the next real year in its direction — 1 BCE ↔ 1 CE at ±1, and
+//     the same rule for ±10/±100 (a landing on 0 continues one more year).
+//     `#0` links and the slider still reach the internal year 0 unchanged;
+//   - later requests accumulate from the LATEST request, not the last painted
+//     frame — several presses before a paint are several steps;
+//   - one draw per frame (coalesced like the scrub rAF, no preview: a key seek
+//     is a destination, full quality — one callback can still be a cold sheet
+//     crossing; the (208) warmer keeps the neighbourhood warm, it is not free);
+//   - never through the scrub's input handler: its story-endpoint magnetism
+//     (~24 years) would move an exact request somewhere else;
+//   - stops playback: a precise destination is a place to look (keyboard seeks
+//     always stopped; the typed year keeps that rule — Cancel is what resumes).
+const seek={req:null,raf:0};
+function seekTo(year){
+  year=Math.max(YEAR_MIN,Math.min(YEAR_MAX,Math.round(year)));
+  seek.req=year; playPos=tAt(year); scrub.value=playPos;
+  stop(); takeClock(); cometCard._resume=false; // seek takes the clock (stop announces the NEW year — value is already set)
+  if(!seek.raf) seek.raf=requestAnimationFrame(()=>{ seek.raf=0; seek.req=null; draw(+scrub.value); syncHash(); });
+}
+function seekBy(delta){
+  let y=(seek.req!=null?seek.req:yearAt(+scrub.value))+delta;
+  if(y===0) y=delta>0?1:-1; // no year 0 — 1 BCE ↔ 1 CE
+  seekTo(y);
+}
 document.addEventListener("keydown",(e)=>{
   if(e.key==="Escape"){ // layered, topmost first: ⓘ bubble → tooltip → comet card → reader card → legend → panel
     // in fullscreen the browser consumes Esc to exit AND still delivers the keydown
@@ -5175,6 +5283,9 @@ document.addEventListener("keydown",(e)=>{
     // the panel's ⓘ bubble is the innermost layer and the only one that dismisses
     // WITHOUT moving focus (persona F 08-10, WCAG 1.4.13)
     if(hushInfoPop()) return;
+    // (209) the keyboard help is hover/focus content too: Escape dismisses it (and
+    // nothing beneath it closes on the same press) — WCAG 1.4.13 again
+    if(keysHelpHide()) return;
     // a visible hover/focus tooltip dismisses first (WCAG 1.4.13 — content on
     // hover must be dismissible without moving the pointer; persona F 07-27)
     if(tip.classList.contains("on")){ hideTip(); return; }
@@ -5191,6 +5302,12 @@ document.addEventListener("keydown",(e)=>{
   // (189 A01b) completes A01: the reader scope handled the reproduced defect,
   // the keysOn switch below handles WCAG 2.1.4's off/remap requirement.
   if(reader.on) return;
+  // (209) the go-to-year editor owns the keyboard while open: its field is an INPUT
+  // (caught by the text-field rule below) but its era/Go/Cancel BUTTONS are not —
+  // a letter typed with one of them focused must not drive the map. Escape never
+  // reaches here while it is open (the form handles it and stops propagation, so
+  // one press cannot also close a panel beneath).
+  if(!yrEdit.hidden) return;
   // modifier chords belong to the browser/OS (cmd+= page zoom was ALSO zooming
   // the map), and IME composition keys are text entry — never app shortcuts.
   // Shift stays ours (shift+arrows = the bigger step).
@@ -5216,19 +5333,11 @@ document.addEventListener("keydown",(e)=>{
     playing?stop():(+scrub.value>=999?(scrub.value=0,play()):play());
   } else if(e.key==="ArrowLeft"||e.key==="ArrowRight"){
     e.preventDefault();
-    stop();
-    takeClock(); // keyboard seek = manual scrub
-    cometCard._resume=false; // seek takes the clock — closing the card must not override
-    const step=(e.shiftKey?100:10)*UNITS_PER_YEAR*(e.key==="ArrowRight"?1:-1);
-    playPos=Math.max(0,Math.min(1000,+scrub.value+step));
-    scrub.value=playPos; draw(playPos); syncHash();
+    seekBy((e.shiftKey?10:1)*(e.key==="ArrowRight"?1:-1)); // (209) 1 year, shift 10
   } else if(e.key==="j"||e.key==="J"||e.key==="l"||e.key==="L"){
-    stop(); // j/l: the arrows' bigger sibling — century steps, era jumps with shift
-    takeClock();
-    cometCard._resume=false; // seek takes the clock
-    const step=(e.shiftKey?500:100)*UNITS_PER_YEAR*((e.key==="l"||e.key==="L")?1:-1);
-    playPos=Math.max(0,Math.min(1000,+scrub.value+step));
-    scrub.value=playPos; draw(playPos); syncHash();
+    seekBy((e.shiftKey?100:10)*((e.key==="l"||e.key==="L")?1:-1)); // (209) 10 years, shift 100 — the arrows' bigger sibling
+  } else if(e.key==="g"||e.key==="G"){ // (209) go to a year — the big year's editor
+    e.preventDefault(); openYrEdit();
   } else if(e.key==="+"||e.key==="="){
     SND.click(1); userZoomed(); svg.transition().duration(REDUCED?0:260).ease(d3.easeCubicOut).call(zoom.scaleBy,1.5);
   } else if(e.key==="-"||e.key==="_"){
@@ -6482,11 +6591,130 @@ const keysBtn=document.getElementById("keys");
 const keysTxt=keysBtn.appendChild(document.createTextNode(""));
 function keysLabel(){ keysTxt.data=isMobile()?"":(" "+(keysOn?"On":"Off"));
   keysBtn.setAttribute("aria-pressed",String(!!keysOn));
-  keysBtn.classList.toggle("dim",!keysOn); }
+  keysBtn.classList.toggle("dim",!keysOn); renderKeysHelp(); }
 keysBtn.onclick=()=>{ keysOn=!keysOn;
   try{ localStorage.setItem("atlas-keys",keysOn?"1":"0"); }catch(e){}
   keysLabel(); SND.click(keysOn?1:-1); };
+// ---- (209) KEYBOARD HELP — the ONE shortcut list. The keys button's hover/focus
+// help renders it, and tools/nets/hygiene.mjs pins source/about.html's shortcut
+// table to it row for row (About is static HTML; the net is what keeps the two
+// honest). gated: 1 = a printable key the keys switch turns off (Space is one —
+// e.key.length===1), 0 = always on, 2 = mixed (the letter is gated, the named key
+// is not). Order = the About table's order.
+const KEY_HELP=[
+  ["Space or K","Play / pause the timeline",1],
+  ["← →","Step 1 year (Shift: 10)",0],
+  ["J L","Step 10 years (Shift: 100)",1],
+  ["G","Go to a year (the big year is a button too)",1],
+  ["↑ ↓","Playback speed",0],
+  ["+ −","Zoom the map",1],
+  ["H or Home","Reset the view",2],
+  ["M","Sound on / off",1],
+  ["F","Fullscreen",1],
+  ["Esc","Close the topmost card, sheet, or panel",0]
+];
+const keysHelp=document.getElementById("keysHelp");
+function renderKeysHelp(){ // DOM-built (no interpolated innerHTML — hygiene baseline)
+  keysHelp.textContent="";
+  const head=document.createElement("div"); head.className="kh-head";
+  head.textContent="Single-key shortcuts: "+(keysOn?"On — click to switch off":"Off — click to switch on");
+  keysHelp.appendChild(head);
+  const tb=document.createElement("table");
+  for(const [keys,does,gated] of KEY_HELP){
+    const tr=tb.insertRow(); const off=!keysOn&&gated===1; if(off) tr.className="off";
+    const kb=document.createElement("kbd"); kb.textContent=keys; tr.insertCell().appendChild(kb);
+    tr.insertCell().textContent=does+(off?" (off)":(!keysOn&&gated===2?" (the letter is off)":""));
+  }
+  keysHelp.appendChild(tb);
+}
+// show on hover (hover-capable devices only — a tap must not open it) and on
+// KEYBOARD focus (any device: :focus-visible, so a tap's focus does not count);
+// stays while the pointer is on the button OR the help; no timeout; Escape
+// dismisses it, and nothing re-shows it on the spot: enter and focus events do
+// not refire until the pointer leaves and returns or focus moves on and back,
+// which IS fresh intent (a parked flag was tried and over-reached — the help
+// vanishing under the pointer fires its own synthetic leave). Hover and focus
+// never touch the preference — only the click does.
+function keysHelpShow(){ if(!keysHelp.hidden) return;
+  keysHelp.style.right=""; keysHelp.hidden=false;
+  // right-anchored above the button; on a wrapped (phone) transport the button can
+  // sit at the row's left edge, so nudge the help back on-screen
+  const r=keysHelp.getBoundingClientRect(); if(r.left<8) keysHelp.style.right=(r.left-8)+"px"; }
+function keysHelpHide(){ if(keysHelp.hidden) return false; keysHelp.hidden=true; return true; }
+const khOver=()=>keysBtn.matches(":hover")||keysHelp.matches(":hover");
+// a keyboard-focused button keeps its help when the pointer leaves (Chrome also
+// flips a clicked button to :focus-visible on the Escape press itself)
+const khLeave=()=>{ setTimeout(()=>{ if(khOver()||keysBtn.matches(":focus-visible")) return; keysHelpHide(); },80); };
+keysBtn.addEventListener("pointerenter",()=>{ if(mqNoHover&&mqNoHover.matches) return; keysHelpShow(); });
+keysBtn.addEventListener("pointerleave",khLeave);
+keysHelp.addEventListener("pointerleave",khLeave);
+keysBtn.addEventListener("focus",()=>{ if(keysBtn.matches(":focus-visible")) keysHelpShow(); });
+keysBtn.addEventListener("blur",()=>{ if(!khOver()) keysHelpHide(); });
 keysLabel();
+
+// ---- (209) GO TO A YEAR: the big year is a button; G is its shortcut. The draft
+// lives in the field until Go — the map renders the destination once, on submit.
+// Opening pauses playback; Go stays paused (a typed year is a place to look, like
+// every keyboard seek); Cancel/Escape/click-outside restore the prior playback
+// state (the year itself was never moved). Focus returns to the invoking control.
+const yrBtn=document.getElementById("yrBtn"), yrEdit=document.getElementById("yrEdit"),
+      yrIn=document.getElementById("yrIn"), yrErr=document.getElementById("yrErr"),
+      yrEras=[...yrEdit.querySelectorAll(".yr-eb")], infoEl=document.querySelector(".info");
+yrEdit._prev=null; // {playing, focus} while open
+const yrEra=()=>(yrEras.find(b=>b.getAttribute("aria-pressed")==="true")||yrEras[1]).dataset.era;
+function setYrEra(era){ for(const b of yrEras) b.setAttribute("aria-pressed",String(b.dataset.era===era)); }
+function yrFail(msg){ yrErr.textContent=msg; yrIn.setAttribute("aria-invalid","true"); yrIn.focus(); yrIn.select(); }
+// WHOLE-input parse: "1066", "-500", "500 BC", "500 BCE", "AD 800", "800 CE" (periods
+// in B.C.E./A.D. and a thousands comma are fine). The era buttons apply when the
+// text names none; a typed era wins. Refused WITH A MESSAGE — never silently
+// re-dated (the hash parser's permissive parseInt is deliberately not reused):
+// blank, decimals, trailing junk, two eras, a minus sign with a CE era, year 0
+// (there is none — 1 BCE, then 1 CE), and years off the timeline.
+function parseYearInput(raw,era){
+  const s=String(raw).toUpperCase().replace(/([A-Z])\./g,"$1").replace(/(\d),(\d)/g,"$1$2").replace(/\s+/g," ").trim();
+  if(!s) return {err:"Type a year"};
+  const m=/^(?:(AD|CE) )?([-−])?(\d{1,5})(?: ?(BCE|BC|CE|AD))?$/.exec(s);
+  if(!m) return {err:"Years look like 1066, 500 BCE or -500"};
+  const pre=m[1], neg=!!m[2], n=+m[3], suf=m[4];
+  if(pre&&suf) return {err:"One era is enough"};
+  const typed=(pre||suf==="CE"||suf==="AD")?"CE":(suf==="BCE"||suf==="BC")?"BCE":null;
+  if(neg&&typed==="CE") return {err:"A minus sign means BCE — pick one"};
+  if(n===0) return {err:"There is no year 0 — try 1 BCE or 1 CE"};
+  const e=typed||(neg?"BCE":era), y=e==="BCE"?-n:n;
+  if(y<YEAR_MIN||y>YEAR_MAX) return {err:"The timeline runs from "+fmtYear(YEAR_MIN)+" to "+fmtYear(YEAR_MAX)};
+  return {year:y,era:e};
+}
+function yrOutside(e){ if(yrEdit.contains(e.target)||yrBtn.contains(e.target)) return; closeYrEdit(true); }
+function openYrEdit(){
+  if(!yrEdit.hidden){ yrIn.focus(); yrIn.select(); return; }
+  const y=yearAt(+scrub.value);
+  yrEdit._prev={playing,focus:document.activeElement};
+  if(playing){ SND.click(-1); stop(); }
+  yrIn.value=String(Math.abs(y===0?1:y)); setYrEra(y<0?"BCE":"CE");
+  yrErr.textContent=""; yrIn.removeAttribute("aria-invalid");
+  // desktop: float just above the year readout; small UI: the CSS pins it to the top
+  if(smallUI()) yrEdit.style.bottom="";
+  else { const host=(yrEdit.offsetParent||stage).getBoundingClientRect();
+    yrEdit.style.bottom=Math.round(host.bottom-infoEl.getBoundingClientRect().top+10)+"px"; }
+  yrEdit.hidden=false; yrIn.focus({preventScroll:true}); yrIn.select();
+  document.addEventListener("pointerdown",yrOutside,true);
+}
+function closeYrEdit(restore){
+  if(yrEdit.hidden) return;
+  yrEdit.hidden=true; document.removeEventListener("pointerdown",yrOutside,true);
+  const p=yrEdit._prev; yrEdit._prev=null;
+  if(restore&&p&&p.playing&&!playing) play();
+  const f=(p&&p.focus&&p.focus.isConnected&&p.focus!==document.body)?p.focus:yrBtn;
+  f.focus({preventScroll:true});
+}
+yrBtn.addEventListener("click",()=>{ SND.click(); openYrEdit(); });
+yrEras.forEach(b=>b.addEventListener("click",()=>{ setYrEra(b.dataset.era); yrIn.focus(); }));
+document.getElementById("yrCancel").addEventListener("click",()=>{ SND.click(-1); closeYrEdit(true); });
+yrEdit.addEventListener("keydown",e=>{ if(e.key==="Escape"){ e.preventDefault(); e.stopPropagation(); SND.click(-1); closeYrEdit(true); } });
+yrEdit.addEventListener("submit",e=>{ e.preventDefault();
+  const r=parseYearInput(yrIn.value,yrEra());
+  if(r.err){ yrFail(r.err); return; }
+  closeYrEdit(false); SND.click(); seekTo(r.year); });
 // compact button labels follow the 600px boundary live (rotate/resize), not just at boot
 resize._labels=()=>{ modeBtn.textContent=isMobile()?cap(colorMode):"Color: "+colorMode; soundLabel(); keysLabel(); };
 // restore preference — audio still legally needs a gesture, so arm a one-time starter
