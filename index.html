@@ -619,6 +619,10 @@
     max-width:min(330px,calc(100vw - 28px));background:rgba(13,16,24,.96);border:1px solid var(--line);
     border-radius:10px;padding:10px 12px;font-size:11.5px;color:var(--ink-dim);text-align:left;letter-spacing:0;
     -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  /* (210 R209-03) hover BRIDGE: the 10px visual gap between the help and its button
+     belongs to the help's hit area, so a slow pointer crossing it (or pausing in it)
+     never counts as leaving — WCAG 1.4.13 hoverable without depending on speed */
+  .keys-help::after{content:"";position:absolute;left:0;right:0;top:100%;height:10px}
   .keys-help[hidden]{display:none}
   .keys-help .kh-head{color:var(--ink);font-weight:600;margin-bottom:6px}
   .keys-help table{border-collapse:collapse}
@@ -5257,10 +5261,14 @@ function seekTo(year){
   stop(); takeClock(); cometCard._resume=false; // seek takes the clock (stop announces the NEW year — value is already set)
   if(!seek.raf) seek.raf=requestAnimationFrame(()=>{ seek.raf=0; seek.req=null; draw(+scrub.value); syncHash(); });
 }
+// (210 R209-01) there is no year 0, so stepping happens on an ORDINAL scale where
+// 1 BCE and 1 CE are adjacent integers (…, -2, -1 | 0, 1, …): a ±10 across the
+// boundary then equals ten ±1 presses (5 BCE → 6 CE, not 5 CE) and every step has
+// an exact inverse. Internal year 0 — reachable by the slider and a #0 link — is
+// displayed as 1 CE (fmtYear), so it sits on the same ordinal as 1 CE.
+const yearOrd=y=>y>0?y-1:y, ordYear=o=>o>=0?o+1:o;
 function seekBy(delta){
-  let y=(seek.req!=null?seek.req:yearAt(+scrub.value))+delta;
-  if(y===0) y=delta>0?1:-1; // no year 0 — 1 BCE ↔ 1 CE
-  seekTo(y);
+  seekTo(ordYear(yearOrd(seek.req!=null?seek.req:yearAt(+scrub.value))+delta));
 }
 document.addEventListener("keydown",(e)=>{
   if(e.key==="Escape"){ // layered, topmost first: ⓘ bubble → tooltip → comet card → reader card → legend → panel
@@ -5273,6 +5281,11 @@ document.addEventListener("keydown",(e)=>{
     // (209) the keyboard help is hover/focus content too: Escape dismisses it (and
     // nothing beneath it closes on the same press) — WCAG 1.4.13 again
     if(keysHelpHide()) return;
+    // (210 R209-02) the go-to-year editor is nonmodal: Shift+Tab out of its field
+    // (or Tab past Cancel) parks focus OUTSIDE the form, where the form's own
+    // Escape handler cannot see the key — this press must still cancel the editor
+    // (restoring playback) and nothing beneath it may close on the same press
+    if(!yrEdit.hidden){ SND.click(-1); closeYrEdit(true); return; }
     // a visible hover/focus tooltip dismisses first (WCAG 1.4.13 — content on
     // hover must be dismissible without moving the pointer; persona F 07-27)
     if(tip.classList.contains("on")){ hideTip(); return; }
@@ -5291,9 +5304,10 @@ document.addEventListener("keydown",(e)=>{
   if(reader.on) return;
   // (209) the go-to-year editor owns the keyboard while open: its field is an INPUT
   // (caught by the text-field rule below) but its era/Go/Cancel BUTTONS are not —
-  // a letter typed with one of them focused must not drive the map. Escape never
-  // reaches here while it is open (the form handles it and stops propagation, so
-  // one press cannot also close a panel beneath).
+  // a letter typed with one of them focused must not drive the map. Escape is
+  // handled above whichever element holds focus: inside the form by the form's
+  // own handler (which stops propagation), outside it by the Escape chain's
+  // editor branch — either way one press cannot also close a panel beneath.
   if(!yrEdit.hidden) return;
   // modifier chords belong to the browser/OS (cmd+= page zoom was ALSO zooming
   // the map), and IME composition keys are text entry — never app shortcuts.
