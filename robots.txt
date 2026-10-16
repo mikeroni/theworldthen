@@ -1,6 +1,11 @@
-# Pre-launch (2026-10-10): indexing blocked while the site is shared
-# privately with friends. AT LAUNCH restore:  Allow: /
+# Preview (2026-10-16): the site is reachable but shared privately while
+# bugs are fixed. Indexing is declined by <meta name="robots" content="noindex">
+# on every page (the build's default). Crawling stays ALLOWED on purpose: a
+# Disallow would stop crawlers from reading that directive, and a disallowed
+# but known URL can still be listed. AT LAUNCH rebuild with
+#   python3 source/build.py --launch
+# which lifts the meta; this file does not change.
 User-agent: *
-Disallow: /
+Allow: /
 
 Sitemap: https://theworldthen.com/sitemap.xml
