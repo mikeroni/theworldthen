@@ -2,12 +2,35 @@
 
 Copyright (c) 2026 Michael Manning ("The World Then", formerly "Atlas of Civilizations")
 
-This project is a hybrid work, licensed as a dual grant:
+This project is a hybrid work with COMPONENT-SPECIFIC licenses. Each component
+below is licensed on its own terms; nothing here is a choice between two
+licenses for the same material, and the same file can hold differently
+licensed parts (the built pages and data files do).
 
-1. **The software** — all JavaScript, CSS, HTML structure, and build tooling
-   (source/app.html markup/styles/scripts, source/about.html, source/build.py,
-   and the built outputs' code) — is licensed under the
-   **PolyForm Noncommercial License 1.0.0**, reproduced in full below.
+1. **The software** — the original markup, styles, and scripts of the atlas
+   page (source/app.html and the pages built from it: index.html and
+   the-world-then.html), the structure and styles of about.html, the build
+   script (source/build.py), and the build documentation — is licensed under
+   **The World Then Noncommercial ShareAlike License 1.0**, a custom license
+   written for this project. Its full text ships beside this file as
+   LICENSE-TWT-NC-SA-1.0.txt and at https://theworldthen.com/LICENSE-TWT-NC-SA-1.0.txt.
+   It is not an open-source license and it is not a PolyForm or Creative
+   Commons license. In short: noncommercial use is permitted (learning,
+   research, teaching, hobby projects, freely available community tools, and
+   an honestly credited personal portfolio, including when seeking work);
+   anyone who distributes a modified version, or lets other people use a
+   hosted one, must offer their contributions under this same license, keep
+   the credits, identify their changes, and give those recipients or users
+   matching source; private modifications need not be published; commercial
+   use needs separate permission (see section 8 of the license).
+
+   CORRESPONDING SOURCE: the editable source of the deployed software is
+   published in the same repository that serves the site,
+   https://github.com/mikeroni/theworldthen, under source/ (app.html,
+   about.html, build.py, BUILDING.md). Every deployed release is tagged
+   release-<number>; the About page of each build names its own release, so
+   a downloaded the-world-then.html can be matched to the exact source that
+   built it. Build instructions: source/BUILDING.md.
 
 2. **The creative content** — the curated historical dataset (polity roster
    curation, religion/culture/language tags, curated wars and cities), all
@@ -15,6 +38,8 @@ This project is a hybrid work, licensed as a dual grant:
    under **Creative Commons Attribution-NonCommercial-ShareAlike 4.0
    International (CC BY-NC-SA 4.0)**:
    https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+   The software license's conditions do not apply to this content, and this
+   content's conditions do not apply to the software.
 
 3. **Third-party material keeps its own licenses** and is NOT relicensed by
    this file: the historical border geometry is derived from the
@@ -29,90 +54,37 @@ This project is a hybrid work, licensed as a dual grant:
    extracts and redistributes the border-geometry data does so under
    GPL-3.0's terms, not these. Wikipedia text remains CC BY-SA 4.0, Wikidata
    data is CC0, AUSTLANG name data is CC BY 4.0 (AIATSIS), Natural Earth data
-   is public domain, and bundled libraries carry their own licenses (the
-   vendored flubber library is MIT, its notice preserved in the file) — the
-   complete inventory lives in ATTRIBUTIONS.md.
+   is public domain, images are served from Wikimedia Commons under their
+   individual licenses, and bundled libraries carry their own licenses (d3
+   and topojson-client are ISC, the vendored flubber library is MIT, its
+   notice preserved in the file; the Fraunces, Inter, and Cinzel typefaces
+   are SIL OFL 1.1). The complete public inventory, row for row, is the
+   "Sources & licenses" section of the About page:
+   https://theworldthen.com/about.html#sources
 
-In both grants the spirit is the same, and it is stated in plain words on the
-project's About page: use it freely for learning, teaching, personal projects,
-and fun, with credit; don't sell it, paywall it, rebrand it, or strip the
-attributions. Commercial licensing: mikemanning1223@gmail.com.
+4. **Historical notice (software license transition, 2026-10-16).** Through
+   the public release of 2026-10-16 (commit 596f428 of the repository above,
+   round (212)) the software component was offered under the PolyForm
+   Noncommercial License 1.0.0 (https://polyformproject.org/licenses/noncommercial/1.0.0).
+   The release tagged release-213 (2026-10-16) is the first published under
+   The World Then Noncommercial ShareAlike License 1.0, and every later
+   release and contribution is offered under it. This change is prospective:
+   it does not revoke any grant already received, and software obtained under
+   the PolyForm terms remains subject to those terms for that copy; the
+   earlier releases and their license text stay in the repository's history.
+   The new license differs from PolyForm beyond adding share-alike: it adds a
+   matching-source condition for distributed and hosted modified versions, it
+   expressly permits credited personal portfolios and hosted source delivery,
+   and it does not carry PolyForm's blanket permitted-use rule for named
+   nonprofit and public institutions (the activity decides, not the
+   operator). PolyForm is not offered as an alternative for new contributions.
 
-Required Notice: Copyright (c) 2026 Michael Manning
-(The World Then)
+The About page (https://theworldthen.com/about.html#use) states the software
+rules in plain words: noncommercial use; keep the credits and notices; a shared
+or hosted modified version carries the same software license and offers its
+source. The creative content's conditions are those of CC BY-NC-SA 4.0 and
+nothing more; third-party material answers only to its own terms. These terms
+have not been reviewed by a lawyer. Commercial licensing and questions:
+mikemanning1223@gmail.com.
 
----
-
-# PolyForm Noncommercial License 1.0.0
-
-<https://polyformproject.org/licenses/noncommercial/1.0.0>
-
-## Acceptance
-
-In order to get any license under these terms, you must agree to them as both strict obligations and conditions to all your licenses.
-
-## Copyright License
-
-The licensor grants you a copyright license for the software to do everything you might do with the software that would otherwise infringe the licensor's copyright in it for any permitted purpose.  However, you may only distribute the software according to [Distribution License](#distribution-license) and make changes or new works based on the software according to [Changes and New Works License](#changes-and-new-works-license).
-
-## Distribution License
-
-The licensor grants you an additional copyright license to distribute copies of the software.  Your license to distribute covers distributing the software with changes and new works permitted by [Changes and New Works License](#changes-and-new-works-license).
-
-## Notices
-
-You must ensure that anyone who gets a copy of any part of the software from you also gets a copy of these terms or the URL for them above, as well as copies of any plain-text lines beginning with `Required Notice:` that the licensor provided with the software.  For example:
-
-> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
-
-## Changes and New Works License
-
-The licensor grants you an additional copyright license to make changes and new works based on the software for any permitted purpose.
-
-## Patent License
-
-The licensor grants you a patent license for the software that covers patent claims the licensor can license, or becomes able to license, that you would infringe by using the software.
-
-## Noncommercial Purposes
-
-Any noncommercial purpose is a permitted purpose.
-
-## Personal Uses
-
-Personal use for research, experiment, and testing for the benefit of public knowledge, personal study, private entertainment, hobby projects, amateur pursuits, or religious observance, without any anticipated commercial application, is use for a permitted purpose.
-
-## Noncommercial Organizations
-
-Use by any charitable organization, educational institution, public research organization, public safety or health organization, environmental protection organization, or government institution is use for a permitted purpose regardless of the source of funding or obligations resulting from the funding.
-
-## Fair Use
-
-You may have "fair use" rights for the software under the law. These terms do not limit them.
-
-## No Other Rights
-
-These terms do not allow you to sublicense or transfer any of your licenses to anyone else, or prevent the licensor from granting licenses to anyone else.  These terms do not imply any other licenses.
-
-## Patent Defense
-
-If you make any written claim that the software infringes or contributes to infringement of any patent, your patent license for the software granted under these terms ends immediately. If your company makes such a claim, your patent license ends immediately for work on behalf of your company.
-
-## Violations
-
-The first time you are notified in writing that you have violated any of these terms, or done anything with the software not covered by your licenses, your licenses can nonetheless continue if you come into full compliance with these terms, and take practical steps to correct past violations, within 32 days of receiving notice.  Otherwise, all your licenses end immediately.
-
-## No Liability
-
-***As far as the law allows, the software comes as is, without any warranty or condition, and the licensor will not be liable to you for any damages arising out of these terms or the use or nature of the software, under any kind of legal claim.***
-
-## Definitions
-
-The **licensor** is the individual or entity offering these terms, and the **software** is the software the licensor makes available under these terms.
-
-**You** refers to the individual or entity agreeing to these terms.
-
-**Your company** is any legal entity, sole proprietorship, or other kind of organization that you work for, plus all organizations that have control over, are under the control of, or are under common control with that organization.  **Control** means ownership of substantially all the assets of an entity, or the power to direct its management and policies by vote, contract, or otherwise.  Control can be direct or indirect.
-
-**Your licenses** are all the licenses granted to you for the software under these terms.
-
-**Use** means anything you do with the software requiring one of your licenses.
+Copyright notice to retain: Copyright (c) 2026 Michael Manning (The World Then)

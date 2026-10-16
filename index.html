@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<!-- The World Then — Copyright (c) 2026 Michael Manning.
-     Code: PolyForm Noncommercial 1.0.0 · Content: CC BY-NC-SA 4.0 · see LICENSE.md.
-     Required Notice: Copyright (c) 2026 Michael Manning (The World Then) -->
+<!-- The World Then — Copyright (c) 2026 Michael Manning (The World Then).
+     Code: The World Then Noncommercial ShareAlike License 1.0 · Content: CC BY-NC-SA 4.0
+     · third-party data and libraries keep their own licenses · full terms:
+     https://theworldthen.com/LICENSE.md · this build is release 213; its source:
+     https://github.com/mikeroni/theworldthen/tree/release-213/source -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -272,6 +274,7 @@
     text-transform:uppercase;color:var(--ink-faint);text-decoration:none;
     border:1px solid var(--line);border-radius:20px;padding:5px 13px;transition:.2s}
   .about-link:hover{color:var(--ink);border-color:var(--cyan)}
+  .about-link.src{margin-left:0} /* (213) second pill sits beside "about"; the header gap separates them */
   .tag{font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:2.5px}
   /* the ORIGINAL chrome treatment (Mike, round 7: tracked caps = quick + impact;
      Inter reads as designed chrome in caps, generic only in sentence case).
@@ -789,7 +792,8 @@
        link there */
     header{padding:14px 14px 8px 16px}.tag{display:none}
     .brand{font-size:15px;white-space:nowrap}
-    .about-link{padding:5px 10px;letter-spacing:1.4px}
+    .about-link{padding:5px 8px;letter-spacing:1.2px}
+    .about-link.src{margin-left:-6px} /* (213) two pills + the nowrap brand must fit 360px inside the 14px gutters */
     .info{max-width:70vw;bottom:14px}
     .era-year{font-size:clamp(34px,12vw,54px)}
     /* (209) the go-to-year editor pins to the TOP on phones: the software keyboard
@@ -880,6 +884,11 @@
     <div class="brand"><span class="bx">The</span> <b>World</b> <span class="bx" id="brandEra">Then</span></div>
     <div class="tag">An interactive atlas of world history</div>
     <a class="about-link" href="about.html" target="_blank" rel="noopener">about</a>
+    <!-- (213) the license's matching-source route must be VISIBLE, not a View-Source
+         comment: the standalone travels alone and the online About page will name a
+         later release after the next deploy, so this link is pinned to THIS build's
+         release tag (the tag's root shows LICENSE.md + source/). -->
+    <a class="about-link src" href="https://github.com/mikeroni/theworldthen/tree/release-213" target="_blank" rel="noopener" title="License and source code for release 213">source</a>
   </header>
   <div id="stage">
     <canvas id="stars"></canvas>

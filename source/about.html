@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<!-- The World Then — Copyright (c) 2026 Michael Manning (The World Then).
+     Code: The World Then Noncommercial ShareAlike License 1.0 · Content: CC BY-NC-SA 4.0
+     · third-party data and libraries keep their own licenses · full terms:
+     https://theworldthen.com/LICENSE.md -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="How The World Then is built: methodology, data sources, licenses, and the limits of mapping 4,000 years of borders.">
+<meta name="theme-color" content="#0d0a14">
+<!-- favicon: the Big Dipper mark — this page's own egg geometry (see .sf-dipper).
+     Inlined data: URIs so file:// shows it; H's deploy round adds real files. -->
+<link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAADbklEQVR4AdSWe0hTYRjGH1Y2u2hMbWQ2K8pFzMqijCiKCDP6qygqiopuEPVnRPfSpAtK6pCENNFNIy0qQjDIvJRKXlILlP7QCBQTzEs6MXVK7fnwHM9M88Jx0uDd957ve7/n95x33w5HA8Vn6YJ1m4yLNxavNG7vXmva9VvNoCa1yVAgIRtY5h9smavTF9r7ujc0NtVoa76VQs2gJrXJIEsyIQxwYqb7nKN1DVVobq1HT2+XtK7aSE1qk0EWmRTXsCWeHj5HG5tqJwVMiDJohCwyydZMm+F2v6290SVwyQhNkEm2RjtjVpCts0Vac9lIJtkaNzetlo5cRh4AkUm2OIQDc1My/B8GDIaF0Ol0cocCA024fvUyOMqTE0xG7YC3txeK3ufjc0UZTCu2iTh5/CxOnzqJI4dPTBA7uG1UA54eBthsXSgtK0d9QzWqv+QhKTkeiY+S8CY7HwY/k4ikhCRE3rsDrVY7qD6QrV61Cov8/QeunIcRDXh66sXd9tn7YHII7Nt/AB0dTWJ3VVU1Im7fRU5upjDlt9ALISFbcfDAfhw6eEbsk4ydOnEOma9eoOBdLpYvN4r9yi8nA3T//Gk6sjKzsHRJkBDnXSs3DJcXlxQgJvYBLNaXSLaYRZfabT/AmD17lrxFr9fLuZQ4GVi7Jgjr169zHC4j3Ge2y3csFf9rjDHHID09Sy5htxjmuChERpkdEY+CgkJ5XUqcDHwoLsHN8AhcuxEG5lLReEb+dEPrrWkZyMurHDotrp0McCY5xQJrahrTccdIPxc7MZLYXwZGKhzrPA/fWGtZp6qBPbtD8TorEVcuXaT2mEJVA0ZjgIBu3RIing3KbhgM87EheLNYV36paiA6JhbRsWZcuXZB/AUJ4tNzZ+heJDyMwLOMFITuCOG0HKoaaGlpRaw5DuUVleIvzEPJJ2d//08ZOG+ej5wzUdUABYeL7Lc5uH4zHDfCbiHt8ROnEpcYINFiTUWKxcrUKVxmwImquJh6A3Z7T4/j5VDhyTUpmWRrHC+HnzzmeLuGqqCQSbamv9d+XjfXF3SkWJ/UlCwyydZ8/f6xqMPWbPXVL3OJCcLJIpNscQhr60qP/erutPr7BcLHyzApRgimNhlkkck2CwNMONHe1rTZbbp7ia8+oCdgSTDUCEmDmtQmgywyGX8AAAD//7mupD8AAAAGSURBVAMAkwynSmfCXuAAAAAASUVORK5CYII=">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='%230d0a14'/%3E%3Crect%20x='1'%20y='1'%20width='62'%20height='62'%20rx='13'%20fill='none'%20stroke='%23322b4a'%20stroke-width='2'/%3E%3Cg%20stroke='%2346406a'%20stroke-width='1.6'%20fill='none'%3E%3Cpath%20d='M10%2028.6%2019.9%2021.8%2029%2021%2038.1%2024.8%2041.2%2038.5%2054.1%2042.3%2051.8%2026.3%2038.1%2024.8'/%3E%3C/g%3E%3Cg%20fill='%23efe9f0'%3E%3Ccircle%20cx='10'%20cy='28.6'%20r='2.5'/%3E%3Ccircle%20cx='19.9'%20cy='21.8'%20r='2.2'/%3E%3Ccircle%20cx='29'%20cy='21'%20r='2.2'/%3E%3Ccircle%20cx='38.1'%20cy='24.8'%20r='2.5'/%3E%3Ccircle%20cx='41.2'%20cy='38.5'%20r='2.5'/%3E%3Ccircle%20cx='54.1'%20cy='42.3'%20r='2.8'/%3E%3Ccircle%20cx='51.8'%20cy='26.3'%20r='2.8'/%3E%3C/g%3E%3C/svg%3E">
+<title>About · The World Then</title>
+<link rel="canonical" href="https://theworldthen.com/about.html">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<!-- social-share card (H+K round, 2026-08-03) — same static card as the app page -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://theworldthen.com/about.html">
+<meta property="og:site_name" content="The World Then">
+<meta property="og:title" content="About · The World Then">
+<meta property="og:description" content="How The World Then is built: methodology, data sources, licenses, and the limits of mapping 4,000 years of borders.">
+<meta property="og:image" content="https://theworldthen.com/og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A dark world map of the year 1279 CE with civilizations shaded in soft colors — Great Khanate, Song Empire, Ilkhanate, Mali — under the title The World Then.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="About · The World Then">
+<meta name="twitter:description" content="How The World Then is built: methodology, data sources, licenses, and the limits of mapping 4,000 years of borders.">
+<meta name="twitter:image" content="https://theworldthen.com/og-card.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Dataset",
+  "name": "The World Then — baked historical atlas dataset",
+  "url": "https://theworldthen.com/about.html",
+  "description": "The data behind The World Then: ~1,250 polity records spanning 2000 BCE to the present with border-geometry frames, rulers, wars, religions, languages and endonyms, compiled from Wikidata, Wikipedia and the historical-basemaps project. Sources, methodology and honest limits are documented on this page.",
+  "isBasedOn": [
+    "https://www.wikidata.org/",
+    "https://en.wikipedia.org/",
+    "https://github.com/aourednik/historical-basemaps",
+    "https://www.naturalearthdata.com/"
+  ],
+  "license": [
+    "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+    "https://www.gnu.org/licenses/gpl-3.0.html"
+  ],
+  "creator": {"@type": "Person", "name": "Michael Manning"},
+  "distribution": [
+    {"@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": "https://theworldthen.com/data/civs-app.json"},
+    {"@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": "https://theworldthen.com/data/enrichment.json"}
+  ]
+}
+</script>
+<!-- fonts are self-hosted (OFL faces; see #privacy below) -->
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  /* Shares the app's design tokens (source/app.html :root) — keep in sync by hand;
+     this page has no data dependencies; its JS is three small end-of-body scripts:
+     the file:// link rewrite, the constellation, and the back-to-top button. */
+  :root{
+    --void:#0d0a14;--void-2:#15111f;--sea:#1a1730;--land:#2e2840;
+    --land-edge:#46406a;--ink:#efe9f0;--ink-dim:#9a90a8;--ink-faint:#8a7f9e;
+    --cyan:#7fe6d8;--magenta:#e07fb0;--line:#322b4a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  :focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  body{
+    background:linear-gradient(180deg,var(--void) 0%,var(--void-2) 100%) var(--void);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* the night sky — a position:fixed layer, NOT background-attachment:fixed (that one
+     forces main-thread repaints on scroll and misbehaves on mobile Safari). Three
+     repeating star tiles at co-prime-ish sizes so the pattern never visibly loops;
+     each radial-gradient is one star. Holds the shooting-star <i> children too, so one
+     mask governs the whole sky. */
+  .sky{
+    position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;
+    opacity:.55; /* narrow screens: text spans the viewport, so dim the sky instead of masking it away */
+    background-image:
+      /* tile A 190x230 — fine dust */
+      radial-gradient(1px 1px at 22px 34px,   rgba(239,233,240,.8)  50%, transparent 51%),
+      radial-gradient(1px 1px at 128px 156px, rgba(239,233,240,.55) 50%, transparent 51%),
+      radial-gradient(1px 1px at 88px 205px,  rgba(239,233,240,.4)  50%, transparent 51%),
+      /* tile B 290x340 — mid stars */
+      radial-gradient(1.4px 1.4px at 214px 61px,  rgba(239,233,240,.85) 50%, transparent 51%),
+      radial-gradient(1px 1px at 64px 288px,      rgba(239,233,240,.5)  50%, transparent 51%),
+      radial-gradient(1.2px 1.2px at 156px 190px, rgba(239,233,240,.65) 50%, transparent 51%),
+      /* tile C 470x420 — sparse bright + the app's two accent hues */
+      radial-gradient(1.8px 1.8px at 352px 92px,  rgba(127,230,216,.75) 50%, transparent 51%),
+      radial-gradient(1.6px 1.6px at 118px 338px, rgba(224,127,176,.6)  50%, transparent 51%),
+      radial-gradient(2px 2px at 254px 218px,     rgba(239,233,240,.9)  50%, transparent 51%);
+    background-size:
+      190px 230px,190px 230px,190px 230px,
+      290px 340px,290px 340px,290px 340px,
+      470px 420px,470px 420px,470px 420px;
+  }
+  /* wide screens: full-strength sky, feathered clear of the reading column (readability) */
+  @media (min-width:1100px){
+    .sky{
+      opacity:1;
+      -webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(50% - 440px),
+        transparent calc(50% - 310px),transparent calc(50% + 310px),
+        #000 calc(50% + 440px),#000 100%);
+      mask-image:linear-gradient(90deg,#000 0,#000 calc(50% - 440px),
+        transparent calc(50% - 310px),transparent calc(50% + 310px),
+        #000 calc(50% + 440px),#000 100%);
+    }
+  }
+  /* shooting stars: rotate() first so translateX travels along the tail's own axis
+     (head-first). The angle rides a custom property (--a) because keyframes REPLACE
+     the whole transform — a static rotate() on the element is silently overridden the
+     moment the animation runs. Steep angles on the left-margin streaks keep them
+     falling within the margin instead of darting into the masked reading column.
+     Co-prime cycle lengths (17s/26s/31s/37s — the audio engine's incommensurate-
+     periods rule) so the sky never reads as a loop; each streak is visible ~1s of its
+     cycle. transform+opacity only — compositor-cheap. */
+  .sky i{
+    position:absolute;width:110px;height:1.5px;border-radius:1px;opacity:0;
+    background:linear-gradient(90deg,rgba(239,233,240,0),rgba(239,233,240,.85));
+    animation:shoot linear infinite;
+  }
+  .sky i:nth-child(1){top:8%;left:3%;--a:62deg;animation-duration:17s;animation-delay:3s}
+  .sky i:nth-child(2){top:-4%;left:52%;--a:48deg;animation-duration:26s;animation-delay:11s}
+  .sky i:nth-child(3){top:26%;left:68%;--a:35deg;animation-duration:37s;animation-delay:7s;
+    background:linear-gradient(90deg,rgba(127,230,216,0),rgba(127,230,216,.7))}
+  .sky i:nth-child(4){top:46%;left:5%;--a:55deg;animation-duration:31s;animation-delay:19s}
+  @keyframes shoot{
+    0%   {transform:rotate(var(--a,35deg)) translateX(0);opacity:0}
+    1.2% {opacity:.8}
+    4.5% {transform:rotate(var(--a,35deg)) translateX(62vmax);opacity:0}
+    100% {transform:rotate(var(--a,35deg)) translateX(62vmax);opacity:0}
+  }
+  /* twinklers: a few bright stars breathing over the calm tiled field — same recipe as
+     the app's canvas starfield (alpha-only oscillation around a base, never to zero,
+     slow 5-13s periods, desynced with negative delays; hues match its three star
+     colors). Position/size/character ride inline custom props on each <b>. */
+  .sky b{
+    position:absolute;border-radius:50%;
+    width:var(--s,2px);height:var(--s,2px);
+    background:var(--c,#efe9f0);opacity:var(--o,.6);
+    animation:twinkle var(--d,9s) ease-in-out infinite var(--dl,0s);
+  }
+  @keyframes twinkle{
+    0%,100%{opacity:calc(var(--o,.6)*.3)}
+    50%    {opacity:var(--o,.6)}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .sky i{animation:none;opacity:0}
+    .sky b{animation:none} /* twinklers stay, statically — same as the app's reduced-motion field */
+  }
+  /* the text rides ABOVE the sky's secret (z-index — see the .sf-dipper block):
+     on narrow screens the constellation hides directly behind the prose */
+  .wrap{max-width:76ch;margin:0 auto;padding:28px 22px 90px;position:relative;z-index:2}
+  header.site{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:44px}
+  /* atlas-plate lockup — matches the app header (two tones: faint chrome + teal noun) */
+  .brand{font-family:'Cinzel',serif;font-weight:700;font-size:21px;text-transform:uppercase;letter-spacing:1.5px}
+  /* Cinzel 700 lockup, matches the app header */
+  .brand .bx{color:var(--ink-faint)}
+  .brand b{color:var(--cyan)}
+  .backlink{margin-left:auto;font-size:12px;letter-spacing:1.2px;text-transform:uppercase;
+    color:var(--ink-dim);text-decoration:none;border:1px solid var(--line);
+    border-radius:20px;padding:7px 16px;transition:.2s;white-space:nowrap}
+  .backlink:hover{color:var(--ink);border-color:var(--cyan)}
+  h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(30px,6vw,44px);
+    line-height:1.12;margin-bottom:14px}
+  .lede{color:var(--ink-dim);font-size:17px;max-width:60ch}
+  nav.toc{display:flex;flex-wrap:wrap;gap:8px;margin:30px 0 10px}
+  nav.toc a{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-dim);
+    text-decoration:none;border:1px solid var(--line);border-radius:20px;padding:6px 13px;transition:.2s}
+  nav.toc a:hover{color:var(--cyan);border-color:var(--cyan)}
+  section{margin-top:58px}
+  h2{font-family:'Fraunces',serif;font-weight:600;font-size:26px;margin-bottom:6px;
+    scroll-margin-top:24px}
+  .eyebrow{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--magenta);
+    display:block;margin-bottom:6px}
+  h3{font-family:'Fraunces',serif;font-weight:500;font-size:18px;margin:26px 0 6px;color:var(--cyan)}
+  p{margin:12px 0;max-width:70ch}
+  ul{margin:12px 0 12px 20px;max-width:68ch}
+  li{margin:7px 0}
+  a{color:var(--cyan)}
+  a:hover{color:var(--ink)}
+  strong{color:var(--ink);font-weight:600}
+  em{color:var(--ink-dim)}
+  .callout{border:1px solid var(--line);border-left:3px solid var(--magenta);
+    border-radius:0 10px 10px 0;background:rgba(21,17,31,.7);padding:14px 18px;margin:18px 0;
+    color:var(--ink-dim);max-width:70ch}
+  .callout strong{color:var(--ink)}
+  /* license / source tables — must scroll inside themselves on phones */
+  .tbl{overflow-x:auto;margin:16px 0;border:1px solid var(--line);border-radius:10px}
+  table{border-collapse:collapse;width:100%;min-width:560px;font-size:13.5px}
+  th{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-faint);
+    text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);background:rgba(21,17,31,.8)}
+  td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink-dim)}
+  tr:last-child td{border-bottom:none}
+  td:first-child{color:var(--ink)}
+  /* (185) key caps in the shortcut reference */
+  kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--ink);
+    background:rgba(255,255,255,.06);border:1px solid var(--line);border-bottom-width:2px;
+    border-radius:5px;padding:1px 6px;white-space:nowrap}
+  /* contact cards: icon + label + detail, one row on desktop, stacking on phones */
+  .contacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+    gap:12px;margin:20px 0 6px}
+  .contact-card{display:flex;align-items:center;gap:14px;text-decoration:none;
+    border:1px solid var(--line);border-radius:12px;padding:14px 16px;
+    background:rgba(21,17,31,.55);color:var(--ink-dim);transition:.2s}
+  .contact-card:hover{border-color:var(--cyan);color:var(--cyan);transform:translateY(-1px)}
+  .contact-card svg{flex:none;width:22px;height:22px}
+  .contact-card .cc-t{display:flex;flex-direction:column;min-width:0}
+  .contact-card strong{color:var(--ink);font-size:13.5px;letter-spacing:.3px}
+  .contact-card em{font-style:normal;font-size:11.5px;color:var(--ink-faint);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .contact-card:hover strong{color:var(--cyan)}
+  @media (prefers-reduced-motion:reduce){.contact-card{transition:none}
+    .contact-card:hover{transform:none}}
+  footer.site{margin-top:80px;padding-top:22px;border-top:1px solid var(--line);
+    color:var(--ink-faint);font-size:12.5px;letter-spacing:.3px}
+  footer.site p{margin:6px 0}
+  /* ---- the sky keeps a secret ------------------------------------------------
+     The Big Dipper hides IN the fixed sky layer — it does not scroll (sky is
+     infinitely far away; text passes over it like everything else up there),
+     tilted the way the actual asterism wheels around Polaris, and its seven
+     stars match the dust around them: the only tells are the shape and, on a
+     long look, their steadiness. Wide screens (>=1200px): it sits in the open
+     right margin, traced by hover. Narrower screens have no margin, so it hides
+     low and center, BEHIND the text (.wrap rides above it on z) — the page ends
+     into open sky (the body's tail padding below), and whoever scrolls past the
+     footer finds it waiting there; trace by tapping or dragging star to star.
+     Tracing all seven tips the ladle; it pours; the spill leaves as a comet;
+     localStorage "atlas-comet" then wakes the map's Halley layer. */
+  .sf-dipper{position:fixed;left:50%;margin-left:-104px;bottom:7vh;width:208px;
+    aspect-ratio:5/3;z-index:1;pointer-events:none;
+    transform:rotate(38deg);transform-origin:50% 50%;
+    transition:transform 1.7s cubic-bezier(.45,0,.3,1)}
+  .sf-dipper.pouring{transform:rotate(118deg)}
+  /* Safari 14 has no aspect-ratio — without a height the seven stars collapse onto
+     one row and the egg is untraceable. Explicit height would BEAT aspect-ratio, so
+     it lives behind @supports not. */
+  @supports not (aspect-ratio:1){.sf-dipper{height:125px}}
+  @media (max-width:1199px){
+    body{padding-bottom:max(42vh,230px)} /* the open sky the dipper waits in */
+  }
+  @media (min-width:1200px){
+    .sf-dipper{left:auto;margin-left:0;bottom:auto;right:44px;top:26vh;width:216px}
+  }
+  .sf-dipper svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .sf-dipper line{stroke:var(--cyan);stroke-width:.45;opacity:0;transition:opacity .6s}
+  .sf-dipper line.on{opacity:.5}
+  .sf-dipper.done line{opacity:.22}
+  .sf-dipper.burn line{opacity:.9}
+  /* the seven: same size and brightness class as the sky's dust — no halo, no
+     giveaway; just a touch steadier (long, shallow breath) */
+  .sf-star{position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px;
+    left:var(--x);top:var(--y);display:grid;place-items:center;
+    background:none;border:none;padding:0;cursor:default;pointer-events:auto;
+    touch-action:none} /* a finger landing on a star traces, not scrolls */
+  .sf-star::after{content:"";width:2px;height:2px;border-radius:50%;background:#efe9f0;
+    animation:sfBreathe var(--d,11s) ease-in-out infinite var(--dl,0s)}
+  .sf-star.on::after{width:3px;height:3px;background:var(--cyan);
+    box-shadow:0 0 7px var(--cyan);animation:none}
+  .sf-dipper.burn .sf-star::after{background:#fff;box-shadow:0 0 12px var(--cyan)}
+  @keyframes sfBreathe{0%,100%{opacity:.45}50%{opacity:.8}}
+  /* stardust spilling from the tipped bowl (fixed, spawned at the lip's true
+     screen position) */
+  .sf-drop{position:fixed;z-index:60;width:2.5px;height:2.5px;border-radius:50%;
+    background:var(--cyan);box-shadow:0 0 5px var(--cyan);opacity:0;pointer-events:none;
+    animation:sfFall 1.3s ease-in var(--dl,0s) forwards}
+  @keyframes sfFall{
+    0%{opacity:0;transform:translate(0,0)}
+    12%{opacity:.95}
+    100%{opacity:0;transform:translate(var(--dx,-30px),var(--dy,150px))}
+  }
+  /* the comet the pour becomes: arcs over the whole (hushed) page */
+  .sf-comet{position:fixed;z-index:60;width:240px;height:2.5px;border-radius:2px;
+    pointer-events:none;background:linear-gradient(90deg,rgba(216,255,244,0),rgba(216,255,244,.95));
+    filter:drop-shadow(0 0 6px rgba(127,230,216,.8))}
+  .sf-comet::after{content:"";position:absolute;right:-4px;top:50%;width:8px;height:8px;
+    margin-top:-4px;border-radius:50%;background:#fff;box-shadow:0 0 14px #bfe6ff}
+  /* while the sky performs, the page holds its breath */
+  body.sf-hush .wrap{opacity:.18;transition:opacity 1.2s}
+  body:not(.sf-hush) .wrap{transition:opacity 1.2s}
+  /* the reveal: centered over the hushed page, then gone (the faint constellation
+     stays in the sky as the only permanent trace) */
+  .sf-reveal{position:fixed;z-index:70;left:50%;top:44%;transform:translate(-50%,-50%);
+    max-width:52ch;padding:0 22px;text-align:center;color:var(--ink-dim);
+    font-size:14.5px;line-height:1.75;opacity:0;pointer-events:none;
+    visibility:hidden;transition:opacity 1.4s,visibility 0s 1.4s} /* visibility keeps the hidden "watch the map" link OUT of the tab order (a11y); the delay lets the fade-out finish before it vanishes */
+  .sf-reveal.on{opacity:1;pointer-events:auto;visibility:visible;transition:opacity 1.4s}
+  .sf-reveal b{color:var(--ink);font-family:'Fraunces',serif}
+  .sf-reveal .sf-wake{display:block;margin-top:12px;color:var(--cyan);font-size:12.5px;
+    letter-spacing:1.2px;text-transform:uppercase}
+  @media (prefers-reduced-motion:reduce){
+    .sf-star::after{animation:none;opacity:.6}
+    .sf-dipper.pouring{transform:rotate(38deg)}
+    .sf-dipper,.sf-reveal,.sf-dipper line{transition:none}
+  }
+  /* back-to-top: appears once you've scrolled past the first screenful */
+  .totop{position:fixed;bottom:20px;right:20px;z-index:5;width:42px;height:42px;
+    border-radius:50%;border:1px solid var(--line);background:rgba(21,17,31,.85);
+    color:var(--ink-dim);font-size:17px;line-height:1;cursor:pointer;
+    display:grid;place-items:center;opacity:0;pointer-events:none;
+    transform:translateY(8px);transition:opacity .25s,transform .25s,border-color .2s,color .2s}
+  .totop.show{opacity:1;pointer-events:auto;transform:none}
+  .totop:hover{color:var(--ink);border-color:var(--cyan)}
+  @media (prefers-reduced-motion:reduce){.totop{transition:none}}
+  @media (max-width:600px){
+    .wrap{padding:20px 16px 70px}
+    header.site{margin-bottom:30px}
+    .brand{font-size:16px}
+    section{margin-top:44px}
+  }
+</style>
+</head>
+<body>
+<div class="sky" aria-hidden="true"><i></i><i></i><i></i><i></i>
+  <b style="top:9%;left:7%;--s:2px;--o:.85;--d:7.3s;--dl:-2s"></b>
+  <b style="top:22%;left:16%;--s:1.5px;--o:.6;--d:9.1s;--dl:-5s;--c:#e0c8ff"></b>
+  <b style="top:64%;left:9%;--s:2.5px;--o:.9;--d:11.7s;--dl:-1s;--c:#bfe6ff"></b>
+  <b style="top:83%;left:19%;--s:1.5px;--o:.55;--d:6.1s;--dl:-3.5s"></b>
+  <b style="top:41%;left:13%;--s:2px;--o:.7;--d:13.3s;--dl:-8s"></b>
+  <b style="top:5%;left:38%;--s:1.5px;--o:.6;--d:8.3s;--dl:-6s;--c:#e0c8ff"></b>
+  <b style="top:93%;left:44%;--s:2px;--o:.75;--d:10.7s;--dl:-4s"></b>
+  <b style="top:3%;left:64%;--s:2px;--o:.8;--d:5.9s;--dl:-2.5s;--c:#bfe6ff"></b>
+  <b style="top:14%;left:88%;--s:2.5px;--o:.9;--d:9.7s;--dl:-7s"></b>
+  <b style="top:33%;left:81%;--s:1.5px;--o:.6;--d:12.1s;--dl:-3s;--c:#e0c8ff"></b>
+  <b style="top:56%;left:92%;--s:2px;--o:.8;--d:7.9s;--dl:-1.5s"></b>
+  <b style="top:72%;left:84%;--s:1.5px;--o:.55;--d:10.3s;--dl:-9s;--c:#bfe6ff"></b>
+  <b style="top:88%;left:76%;--s:2px;--o:.7;--d:6.7s;--dl:-5.5s"></b>
+  <b style="top:49%;left:97%;--s:1.5px;--o:.65;--d:8.9s;--dl:-4.5s"></b>
+</div>
+<div class="wrap">
+
+<header class="site">
+  <div class="brand"><span class="bx">The</span> <b>World</b> <span class="bx">Then</span></div>
+  <a class="backlink" href="index.html">← Back to the Atlas</a>
+</header>
+
+<!-- ((192) landmark cleanup, regression review) the main landmark wraps the
+     document content only; the site header above stays the top-level banner
+     and the site footer below stays the top-level contentinfo (axe
+     landmark-banner/contentinfo-is-top-level). <main> carries no class, so
+     the .wrap styling cascade is untouched. -->
+<main>
+
+<h1>About this Atlas</h1>
+<p class="lede">Explore four thousand years of peoples, states, and empires on a map
+you can move through time. This page explains how the Atlas was built, where its data
+comes from, and what the map can and cannot tell you.</p>
+
+<nav class="toc" aria-label="Page sections">
+  <a href="#reading">How to read this map</a>
+  <a href="#methodology">How it's built</a>
+  <a href="#sound">The sound</a>
+  <a href="#sources">Sources &amp; licenses</a>
+  <a href="#use">Using this</a>
+  <a href="#privacy">Privacy</a>
+  <a href="#accessibility">Accessibility</a>
+  <a href="#contact">Contact</a>
+</nav>
+
+<section id="reading">
+  <span class="eyebrow">Reading the map</span>
+  <h2>How to read this map</h2>
+  <p>This Atlas is a <strong>finding aid, not a citable source</strong>. Use it to
+  explore when and where things happened. Every ruler, event, and article links back
+  to Wikidata or Wikipedia, where you can follow the sources. A few limits to keep
+  in mind as you explore:</p>
+  <ul>
+    <li><strong>All borders are approximate.</strong> Many historical boundaries were
+    zones, frontiers, or networks of tribute rather than lines. Crisp polygons impose a modern
+    idea of territory on steppe empires, maritime trade powers, and tributary systems
+    that never worked that way. That is a limit of the medium, and it applies to every
+    shape you see here.</li>
+    <li><strong>Shapes between keyframes are interpolations.</strong> Border geometry is
+    hand-drawn at coarse year steps and morphed smoothly between them. The in-between
+    frames are animation, not historical claims. The steps are uneven (centuries wide in the ancient world, decades in the modern), and even the modern record has holes:
+    it jumps from 1815 straight to 1880, so whole famous episodes, like the
+    unification of Germany (1871) or of Italy (1861–70), fall between frames and never appear.
+    The panel dates, not the morphing shapes, carry the real chronology.</li>
+    <li><strong>A fading border means the date is soft.</strong> When a polity ends, its
+    outline dissolves instead of vanishing. Where the end is a date somebody wrote down (a treaty, a dissolution, an abolition), it dissolves over about 25 years. Where the same
+    polity returns to the map soon after, the fade lasts until its next chapter starts fading in,
+    so the two meet instead of leaving a gap. Where all we
+    really know is that our border source stops, it fades for roughly a lifetime instead:
+    that is the case for most peoples and for much of the pre-modern world, and the long
+    fade is a limit of the data, not a claim that anyone disappeared. And where nothing
+    else ever claims the same ground, the outline does not go out at all: it holds as a faint trace, for centuries if the map stays empty there, and yields only when a later polity takes the space. A blank map would say “no one was here”, and that is
+    rarely true. Births mirror this: where the founding is a recorded date, the outline
+    arrives within a few years; where our border record simply begins, it fades in over a lifetime, marking the start of our data rather than the birth of a people.</li>
+    <li><strong>Recent borders use two sources.</strong> The historical border
+    record ends at 2010. Where a country's borders have actually changed since then (South Sudan's independence, Crimea), the map carries a present-day frame derived
+    from Natural Earth's reference data, and Natural Earth's conventions decide the
+    contested cases: it maps <em>de facto</em> control, so Crimea appears under Russian
+    control, and <em>de facto</em> states it maps — Kosovo, Palestine, Northern Cyprus,
+    Somaliland — appear here too. Countries whose borders have not changed keep their
+    own most recent frame, which draws the same line in more detail. In frames from
+    1990 onward, islands the historical record never drew (outlying archipelagos, fjord islands, the high Arctic) are filled in from Natural Earth so they appear
+    on the modern map. Showing a source's
+    lines is not an endorsement of any boundary or claim, there or anywhere on this
+    map. A couple dozen small territories and microstates absent from that dataset
+    still hold their 2010 shapes.</li>
+    <li><strong>The Americas at 1492 show traditional indigenous territories.</strong>
+    For the moment of European contact, the border source incorporates territory
+    mappings that trace back to <a href="https://native-land.ca" target="_blank"
+    rel="noopener">Native Land Digital</a> — including names written in their own
+    orthographies, like Očhéthi Šakówiŋ and Anishinabewaki. These depict traditional
+    territories: asserted, often overlapping, and not legal boundaries; the peoples
+    shown lived there long before 1492 and most still do. The map holds this layer
+    from 1492 until the next border sheet at 1500, and we left out groups whose
+    formation came after contact (the Métis, for example) rather than draw them
+    anachronistically. Some smaller territories and a few peoples without usable
+    records are still missing — tracked for future refreshes. The same applies to
+    the indigenous territories shown elsewhere (Australia, the Pacific): boundaries
+    are indicative, some are contested and may not be agreed to by all traditional
+    custodians, and nothing here is suitable for native title or land claims —
+    a caveat we borrow from the AIATSIS map of Indigenous Australia, whose
+    principles guide this layer. Where a community's preferred spelling differs
+    from our map sheet's register, the panel carries the preferred form (checked
+    against <a href="https://collection.aiatsis.gov.au/austlang/search"
+    target="_blank" rel="noopener">AUSTLANG</a>, the AIATSIS language database).
+    And a date range on a people's panel marks the span our map sources cover —
+    never an end: these are continuing peoples, most living in their territories
+    today.</li>
+    <li><strong>The faint modern country borders are a deliberate anachronism</strong>: an orientation aid, so you always know where on today's Earth you are looking. They
+    imply no endorsement of any present-day boundary, and neither do the historical
+    shapes.</li>
+    <li><strong>One religion label per era is a massive simplification.</strong> Every
+    society in history was religiously plural. The religion view paints each polity with
+    a single family-level color per era — a coarse index, not a description of belief.</li>
+    <li><strong>Some source entries are combined; others are split by era.</strong> A polity the
+    border atlas renames across eras (United States of America → United States) is
+    unified into one entry; one whose shape vanishes for centuries (Egypt under
+    Persian, Roman, and Ottoman rule) splits into separate era entries, each honest
+    about its own span. These joins are editorial choices, disclosed here, not
+    statements of fact.</li>
+    <li><strong>“In their own language” is a polity's own name for itself.</strong>
+    Where our sources record one, the panel carries the name a state or people used
+    in its own language and script — Ελλάδα <em>Elláda</em> for Greece, საქართველო
+    <em>Sakartvelo</em> for medieval Georgia — with a romanization when the script
+    needs one. The line appears only when that name differs from the display name,
+    and it reflects the era our sources cover, not every name a community uses
+    today.</li>
+    <li><strong>Polity colors carry no historical meaning.</strong> The palette is presentational
+    and re-assigned at load time purely to keep neighbors distinguishable.</li>
+    <li><strong>Era names are conventions.</strong> Scrubber epochs like “Early Modern”
+    are Western periodization applied globally — a labeling convenience.</li>
+  </ul>
+</section>
+
+<section id="methodology">
+  <span class="eyebrow">Methodology</span>
+  <h2>How it's built</h2>
+
+  <h3>The map and its historical data</h3>
+  <p>The Atlas has two kinds of content. The <strong>geometry layer</strong> (which polities exist, when, and what shape they hold) is curated for this project.
+  The <strong>knowledge layer</strong> — rulers, events, notable people, article
+  summaries — comes from <a href="https://www.wikidata.org" target="_blank"
+  rel="noopener">Wikidata</a> and <a href="https://en.wikipedia.org" target="_blank"
+  rel="noopener">Wikipedia</a>, gathered and verified in a snapshot assembled over
+  several fetch days and shipped <strong>inside the app itself</strong>, so every click answers instantly, offline included. <strong>Data as of 2026-08-25.</strong> Reader-card summaries still
+  refresh live from Wikipedia when you're online, so quoted prose stays current.
+  When the timeline reaches its final year the masthead and the browser tab read <em>The World
+  Now</em> — a nickname for the end of the timeline, not a live feed: the last
+  recorded borders and offices are held forward until the data is refreshed.</p>
+
+  <h3>What we curated by hand</h3>
+  <ul>
+    <li><strong>The polity roster and lifespans.</strong> Displayed dates prefer
+    Wikidata's inception/dissolution claims when they agree with the map's coverage;
+    where geometry coverage differs from the historical dates, the polity's panel
+    shows an “on this map …” footnote disclosing the gap.</li>
+    <li><strong>Chapter dates.</strong> Where one entry spans several political eras
+    (shogunates, empires, republics), the transition years shown on hover are
+    individually sourced, not read off the map sheets.</li>
+    <li><strong>Border keyframes</strong>, derived from the open
+    <a href="https://github.com/aourednik/historical-basemaps" target="_blank" rel="noopener">historical-basemaps</a>
+    project (A. Ourednik): year-snapshot world boundaries, simplified and composited for this map. The source describes these boundaries as approximate, and the same caveat applies here.</li>
+    <li><strong>Religion breakpoints and culture tags</strong>, coarse and family-level
+    by design. A core set is hand-curated with era breakpoints; the rest is seeded
+    from each polity's Wikidata claims. Where those claims carry dates, the seed is era-aware (Makuria turns Christian in 600 and Islamic after 1317, the Golden Horde converts under Uzbeg Khan, Scandinavia's Reformation is dated), and a hand-curated list carries famous transitions the data omits. Most polities
+    still show a single value across their whole mapped span, which flattens
+    history (a state's <em>current</em> official religion is what Wikidata
+    records). The value is the religion of the <em>state</em> (the court, crown, or ruling institution), not a population census: for earlier
+    polities that means the state cult or established church, and the
+    breakpoints are court events (conversions, establishments,
+    disestablishments). For today's states the paint follows what each
+    government itself says: an established or official religion keeps its
+    color, a state that has declared itself secular or formally ended its
+    state church paints as “None (secular state)” from that date, and a
+    state that declares neither shows as unrecorded — a majority faith is
+    never painted as if it were official.</li>
+    <li><strong>The religion view groups labels into families</strong>,
+    with the major branches of the largest traditions as families of their own: Catholic, Orthodox and Protestant Christianity (the Reformation and
+    the East–West divide are visible as color), Sunni and Shia Islam (the
+    Ottoman–Safavid border), and Theravada and Tibetan Buddhism. Records that
+    only say “Christianity,” “Islam,” or “Buddhism” paint as the undivided
+    tradition, which is also how the early centuries of each faith are
+    deliberately shown. Finer distinctions (Lutheran vs Calvinist, Eastern vs
+    Oriental Orthodox, Ibadi Islam) change the details panel, not the
+    paint.</li>
+    <li><strong>Language breakpoints</strong>, likewise coarse: hand-curated for the core set, seeded from Wikidata's official-language claims for the rest
+    (era-aware where the claims are dated — León's chancery switches from Latin
+    to Spanish in 1230 — single-value otherwise, disclosed here). The language map mode
+    colors each polity by its <em>principal administrative or court language</em>, never a claim about everything its people spoke; every empire on this map was
+    multilingual. Painting is by language family; Indo-European and Afro-Asiatic are
+    each divided one branch further, following the convention of linguistic atlases.
+    Rome and the Spanish Empire share a color, for example, because their
+    administrative languages are related. Where a state's
+    language is unrecorded (Tiwanaku, Wari, Chimú), the map says “unrecorded” rather
+    than guessing.</li>
+    <li><strong>A few ruler chronologies.</strong> Reigns come from Wikidata, but it sometimes knows a ruler and not when they ruled, and for a handful of polities it has no ruler list at all. There we supply the conventional dates from the standard
+    published chronology, and any dates Wikidata later gains take precedence over ours.
+    Three polities needed more extensive manual chronologies because Wikidata does
+    not identify the relevant ruling offices. The Kingdom
+    of Bosnia's kings hold no recognized office, so six of its ten cards are transcribed
+    by hand. The two Emilian duchies, Modena and Parma, have none of their rulers
+    recorded as such: every office the data does scope to them is a family style or an
+    heir's title, so both ducal lines, 27 rulers between them, are hand transcriptions
+    of the standard regnal tables. Each card is the name, the title, the reign and the
+    link, checked against that ruler's own dates before it shipped. The cards
+    transcribe the published chronologies, and each links out so you can check the entry.</li>
+    <li><strong>Identity resolution.</strong> Each polity is matched to its Wikidata
+    entity by hand, with every match verified live against the entity's labels and
+    descriptions. With more than a thousand polities, some mismatches may remain
+    despite those checks. If you spot one, please <a href="#contact">report it</a>.</li>
+    <li><strong>War and city overlays.</strong> Marked wars come from Wikidata's
+    participant records, drawn only where both sides can be matched to polities on
+    this map (unmatched wars still appear as event markers); very long-standing
+    conflicts and sub-battles of a war already shown are folded away to keep the
+    layer readable. City dots use Wikidata population series with point-in-time
+    qualifiers — sparse before 1800, interpolated between points, and used
+    <em>only</em> to scale dots. Do not cite the dot sizes.</li>
+  </ul>
+
+  <h3>How events are chosen, and the bias in that</h3>
+  <p>Events come from Wikidata categories (battles, treaties, foundings, plagues, …),
+  and the panel surfaces the ones near your chosen year. They are ranked by
+  <em>sitelink count</em>: how many Wikipedia language editions cover the topic. Each
+  polity's selection is its milestones plus its most-covered events, distributed
+  across its history to avoid leaving entire centuries unrepresented.</p>
+  <p>For about thirty countries, the selection is also checked against English
+  Wikipedia's human-curated history and timeline pages to catch omissions. That
+  comparison does not change the ranking.</p>
+  <p>Sitelink count measures <strong>popularity, not historical importance</strong>.
+  Wikipedia's editor demographics shape what gets covered, so this map has more
+  events for European and anglophone subjects. The ranking is not neutral.</p>
+  <p><strong>Notable people are ranked the same way, with one deliberate thumb on the
+  scale.</strong> A polity's people come from Wikidata citizenship and ethnic-group
+  claims, ranked by that same sitelink count. Left alone, that produced panels where
+  a country's ten most notable people were ten living celebrities — “association
+  football player” is the single most common occupation among the 75,000 people in
+  our data, ahead of “politician”. So the ranking now lets at most two people whose
+  recorded occupations are <em>entirely</em> athletic keep a place near the front of a
+  country's roster; the rest move behind the writers, scientists and statesmen, which
+  on a full roster usually means out of the ten the panel shows. The most famous stay (Pelé is still on Brazil's panel, Usain Bolt still on Jamaica's), though the panel lists its ten oldest-born first, so don't expect them at the top of it.
+  The panel's ten are then drawn to spread, not just to rank: at most a few from any
+  one calling, at most a few from any one era, each row carrying a small occupation tag; the full roster, every person in birth order with filters by calling, sits one tap behind the “See all” button.
+  <strong>We did not manage to do the same for entertainers</strong>: Wikidata's
+  occupation field is a catch-all, so a pop singer is often also tagged “composer”
+  and a footballer “politician”, and no rule we tested could tell them apart without
+  demoting people who plainly belong. Expect musicians and actors to be
+  over-represented on modern countries.</p>
+  <p><strong>A citizenship claim does not always mean someone lived in a country.</strong>
+  Wikidata's claims include honorary citizenship, citizenship through ancestry, and
+  citizenship-by-investment, and because the ranking measures worldwide prominence,
+  these claims sometimes put celebrities who <em>never lived there</em> at the top of
+  a small country's panel. Where the connection can be checked, people whose only tie
+  is citizenship now rank behind those who were born, lived, died, or held office
+  there. On a full panel of ten, they usually drop out of the selection; on thinner
+  rosters they still appear, lower down.</p>
+  <p>This check applies only to modern countries and people born after about 1930.
+  Wikidata's place records use <em>today's</em> borders, which can misclassify earlier
+  lives: someone born in Dublin under British rule, in Danish Scania, or in a village
+  that no longer exists. Those earlier rankings are left unchanged, and a handful of
+  others are held in place by hand where the rule gets their connection wrong.</p>
+  <div class="callout"><strong>Coverage is uneven.</strong> Wikidata is rich for
+  some polities and thin for others (much of the pre-colonial Americas, Africa, and
+  Southeast Asia). Typically only ~20–45% of a polity's events carry coordinates and
+  can appear on the map; the rest are listed in the panel. Absence of a marker is
+  absence of data, not absence of history.</div>
+
+  <h3>Built with AI</h3>
+  <p>This Atlas is a human–AI collaboration. The code, the visual design, and most
+  of this prose were written by
+  <a href="https://claude.com" target="_blank" rel="noopener">Claude</a> (Anthropic's
+  AI) across many working sessions. The direction and the final word belonged to a
+  person: <a href="#contact">Michael Manning</a> chose what to build, tested each
+  round on real devices, pushed back on what felt wrong, and approved every source,
+  fact, and design decision you see. The curated judgments described above — the
+  roster, the borders, which data to trust — went through that human review
+  regardless of who typed them.</p>
+</section>
+
+<section id="sound">
+  <span class="eyebrow">The sound</span>
+  <h2>What you're hearing</h2>
+  <p>Every sound in the Atlas is <strong>synthesized in your browser</strong> with the
+  Web Audio API — no recordings, no samples, nothing licensed. The ambient score is
+  generative and meterless.</p>
+  <p>Selecting some polities re-voices the score with a <strong>family-level cultural
+  nod</strong> — a scale, an instrument character, a playing gesture: zither-style
+  bends for the Chinese court world, an Andean hocket, a harmonic whistle over a
+  steppe drone, a unison choir for the Byzantine chant world, among a dozen others.
+  Each voice comes from a research pass on the real instruments, plus a historian check on whether the tradition is attested for those polities at all; a “no”
+  leaves the default score in place. These are <strong>not reconstructions of
+  period music</strong> and make no claim of authenticity: the voices are
+  synthesized gestures toward each tradition's best-known (often much later) instrument forms (the drone cycle under our Indian-world voice descends from a
+  ~16th-century instrument, voicing far older polities), and the Byzantine-world
+  voice is an abstract <em>ensemble</em> (a wash of voices, never a synthesized soloist) with no ison drone: the drone modern listeners expect under Orthodox
+  chant is first attested in 1584, after the empire fell. Where a polity's musical
+  past can't support even a family-level nod
+  — ancient Egypt, drum-ensemble court traditions a meterless score can't voice
+  honestly, traditions synthesis would caricature — it deliberately keeps the
+  default score rather than receive an invented “ancient-sounding” skin.</p>
+</section>
+
+<section id="sources">
+  <span class="eyebrow">Provenance</span>
+  <h2>Sources &amp; licenses</h2>
+
+  <h3>Data</h3>
+  <!-- (185 A07, a11y review) the table scrolls sideways on phones; the wrapper is
+       a labeled, focusable region so keyboards can reach and scroll it in every
+       browser (WebKit never puts bare scrollports in the tab order) -->
+  <div class="tbl" tabindex="0" role="region" aria-label="Data sources and licenses"><table>
+    <tr><th>What</th><th>Source</th><th>License</th></tr>
+    <tr><td>Rulers, events, people, coordinates, dates, descriptions, native names</td>
+        <td><a href="https://www.wikidata.org" target="_blank" rel="noopener">Wikidata</a> (Query Service + entity API)</td>
+        <td><a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0 1.0</a> — attribution not required; credited gladly anyway</td></tr>
+    <tr><td>Article summaries &amp; extracts displayed in the app</td>
+        <td><a href="https://en.wikipedia.org" target="_blank" rel="noopener">Wikipedia</a> (English — or your browser's language, when that edition has the article), via the REST summary API</td>
+        <td><a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a> — displayed text is attributed to its named article, which each excerpt links to</td></tr>
+    <tr><td>Thumbnails &amp; portraits</td>
+        <td><a href="https://commons.wikimedia.org" target="_blank" rel="noopener">Wikimedia Commons</a></td>
+        <td>Per-file (mostly Creative Commons or public domain); each image's Commons page carries its credits</td></tr>
+    <tr><td>World basemap; present-day border keyframe (post-2010); curated overlay of historically significant rivers &amp; lakes</td>
+        <td><a href="https://www.naturalearthdata.com" target="_blank" rel="noopener">Natural Earth</a> (1:50m countries for the drawn land and modern island shapes, 1:110m countries for the border keyframes, via the world-atlas package; curated 1:50m rivers + 1:110m lakes)</td>
+        <td>Public domain — <em>Made with Natural Earth</em>; world-atlas packaging: ISC</td></tr>
+    <tr><td>Historical border geometry (keyframes)</td>
+        <td><a href="https://github.com/aourednik/historical-basemaps" target="_blank" rel="noopener">historical-basemaps</a> (A.&nbsp;Ourednik), simplified &amp; composited</td>
+        <td>GPL-3.0 (this data component)</td></tr>
+    <tr><td>Indigenous territories of the Americas at 1492 (within the border keyframes)</td>
+        <td>Territory mappings tracing to <a href="https://native-land.ca" target="_blank" rel="noopener">Native Land Digital</a>, as incorporated in the historical-basemaps 1492 sheet — traditional territories, not legal boundaries</td>
+        <td>Via historical-basemaps (GPL-3.0 data component)</td></tr>
+    <tr><td>Aboriginal Australian preferred name forms (the panel's community-preferred spellings)</td>
+        <td><a href="https://collection.aiatsis.gov.au/austlang/search" target="_blank" rel="noopener">AUSTLANG</a>, the AIATSIS language database, via its data.gov.au open dataset</td>
+        <td><a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a></td></tr>
+    <tr><td>Polity roster curation; religion/culture/language tags; the small fallback war &amp; city lists shown only if the baked data fails to load</td>
+        <td>Curated for this project (see methodology above)</td>
+        <td>Original to this project</td></tr>
+  </table></div>
+
+  <h3>Code &amp; type</h3>
+  <div class="tbl" tabindex="0" role="region" aria-label="Code and typeface licenses"><table>
+    <tr><th>What</th><th>Author</th><th>License</th></tr>
+    <tr><td>d3 v7</td><td>Mike Bostock &amp; contributors</td><td>ISC</td></tr>
+    <tr><td>topojson-client</td><td>Mike Bostock</td><td>ISC</td></tr>
+    <tr><td>flubber (shape interpolation)</td><td>Noah Veltman</td><td>MIT</td></tr>
+    <tr><td>Fraunces typeface</td><td>Undercase Type</td><td>SIL OFL 1.1</td></tr>
+    <tr><td>Inter typeface</td><td>Rasmus Andersson</td><td>SIL OFL 1.1</td></tr>
+    <tr><td>Cinzel typeface (the wordmark)</td><td>Natanael Gama</td><td>SIL OFL 1.1</td></tr>
+    <tr><td>Natural Earth I projection</td><td>Tom Patterson (via d3-geo)</td><td>Public domain</td></tr>
+    <tr><td>polylabel label-anchor algorithm (build pipeline)</td><td>Mapbox</td><td>ISC</td></tr>
+    <tr><td>Spherical area &amp; projection routines ported from d3-geo (build pipeline)</td><td>Mike Bostock / d3-geo</td><td>ISC</td></tr>
+    <tr><td>The atlas and About pages' own markup, styles, scripts, and build script</td><td>Michael Manning</td><td><a href="https://theworldthen.com/LICENSE-TWT-NC-SA-1.0.txt" target="_blank" rel="noopener">The World Then Noncommercial ShareAlike 1.0</a> (custom; see <a href="#use">Sharing</a> below)</td></tr>
+    <tr><td>Everything else — design, starfield, generative audio, prose, curation</td><td>Original to this project</td><td><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a></td></tr>
+  </table></div>
+</section>
+
+<section id="use">
+  <span class="eyebrow">Sharing</span>
+  <h2>How you can use this</h2>
+  <p>You're welcome to explore the map, share a link, and use it in noncommercial lessons,
+  lectures, videos and study guides. You can also read the code and adapt it for personal or
+  hobby projects.</p>
+  <p>The code, the original creative content and the third-party material have different
+  licenses, listed below. These are the main rules for using the code:</p>
+  <ul>
+    <li>If you share a copy of the app or host it for others, keep the credits and license
+    notices, identify any changes, and provide matching source code and build instructions.
+    Any code changes you share or host must use the same software license. You don't have to
+    publish private experiments.</li>
+    <li>Your version can have its own name. Keep credit to The World Then, with a link back,
+    and don't claim the original work as yours or imply my endorsement. The software license
+    allows credited personal portfolios, including when applying for jobs or freelance work.</li>
+    <li>Commercial uses of the code need separate permission. That includes selling it,
+    charging for access, incorporating it into a commercial product or service, supplying it as
+    paid client work, or earning revenue from ads, sponsorships or affiliate links.</li>
+    <li>You can accept voluntary contributions toward documented direct hosting costs, up to
+    the amount of those costs, without offering preferential access, features, advertising or
+    services in return. Other donations need permission under the software license.</li>
+  </ul>
+  <p>One request beyond the license: please don't present the map as a definitive historical
+  reference. Its gaps and approximations are described above.</p>
+  <p>The original creative material (the curation, design, prose, and sound) is licensed under
+  <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank"
+  rel="noopener">CC BY-NC-SA 4.0</a> (attribution, noncommercial, share-alike).</p>
+  <p>The original source code (the page's markup, styles, scripts, and build script) is licensed
+  under <a href="https://theworldthen.com/LICENSE-TWT-NC-SA-1.0.txt" target="_blank"
+  rel="noopener">The World Then Noncommercial ShareAlike License 1.0</a>, a custom license
+  written for this project rather than an open-source license. The component-by-component terms
+  are in <a href="https://theworldthen.com/LICENSE.md" target="_blank" rel="noopener">LICENSE.md</a>.
+  This build is release @@RELEASE@@; its complete source, with build instructions, is at
+  <a href="https://github.com/mikeroni/theworldthen/tree/release-@@RELEASE@@/source" target="_blank"
+  rel="noopener">github.com/mikeroni/theworldthen</a>. Before release 213, published on
+  October 16, 2026, the code was offered under the PolyForm Noncommercial License 1.0.0.
+  Previously granted permissions remain in effect.</p>
+  <p>The underlying data keeps its own licenses, listed in the tables above. The border geometry
+  itself stays <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank"
+  rel="noopener">GPL-3.0</a> (it derives from historical-basemaps, and that license travels with
+  it), and Wikipedia text remains CC BY-SA wherever it travels. Want to use the Atlas commercially
+  or in ways these licenses don't cover? <a href="#contact">Ask</a>; the answer to good-faith
+  educational ideas is usually yes.</p>
+</section>
+
+<section id="privacy">
+  <span class="eyebrow">Privacy</span>
+  <h2>What this site knows about you</h2>
+  <p>The site has no accounts, analytics, tracking pixels, or cookies. Your browser
+  stores seven pieces of local data: sound on or off, which layers are showing, the
+  color-blind palette setting, whether the single-key shortcuts are switched off,
+  whether you've seen the welcome card, the dice's recent rolls so they don't
+  repeat, and whether you've woken the sky's oldest clock. These stay on your
+  device. Clear this site's data in your browser to remove them.</p>
+  <p>The map, the timeline, and the included historical data run on your device.
+  Your browser also contacts <strong>Wikipedia</strong> for article text and
+  <strong>Wikimedia Commons</strong> for images: opening a polity's panel, hovering
+  an event, or opening the reader can fetch text or images that aren't already
+  included, and an open panel can fetch a new ruler's portrait as the years
+  advance. These requests go directly to those services, under the
+  <a href="https://foundation.wikimedia.org/wiki/Policy:Privacy_policy"
+  target="_blank" rel="noopener">Wikimedia privacy policy</a>.</p>
+  <p>The three typefaces and every code library are served from this site itself,
+  without a font or code CDN. The downloadable single-file version is the
+  exception: it fetches its typefaces from Google Fonts because it carries no font
+  files of its own.</p>
+  <p>The site's server keeps standard access logs. The support link goes to
+  <strong>Ko-fi</strong>, a separate site with its own terms. There is no separate
+  terms-of-service document for the Atlas; its usage licenses are listed above.</p>
+</section>
+
+<section id="accessibility">
+  <span class="eyebrow">For everyone</span>
+  <h2>Accessibility</h2>
+  <p>The Atlas is designed to be explored without a pointer: the legend list gives a
+  full keyboard path to every polity on screen, media-style keys drive the timeline,
+  keyboard focus stays visible, and map changes are announced to screen readers
+  through a live region. If your system requests reduced motion, the Atlas disables
+  camera flights, autoplay, and decorative animation.</p>
+  <h3>Keyboard shortcuts</h3>
+  <p>These work anywhere in the app except while an article summary is open; while
+  reading, <kbd>Esc</kbd> closes the card. If the single-key shortcuts clash with
+  your keyboard or speech software, the keys button beside the playback controls
+  switches them off. Arrows, <kbd>Home</kbd> and <kbd>Esc</kbd> always work, and
+  every function has an on-screen control. To go straight to a date, click or tap
+  the big year — or press <kbd>G</kbd> — and type one: <em>1066</em>, <em>500 BCE</em>,
+  <em>-500</em> or <em>AD 800</em> all work, and the BCE/CE buttons cover a phone's
+  number pad.</p>
+  <div class="tbl" tabindex="0" role="region" aria-label="Keyboard shortcuts"><table>
+    <tr><th>Keys</th><th>What they do</th></tr>
+    <tr><td><kbd>Space</kbd> or <kbd>K</kbd></td><td>Play / pause the timeline</td></tr>
+    <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Step 1 year (<kbd>Shift</kbd>: 10)</td></tr>
+    <tr><td><kbd>J</kbd> <kbd>L</kbd></td><td>Step 10 years (<kbd>Shift</kbd>: 100)</td></tr>
+    <tr><td><kbd>G</kbd></td><td>Go to a year (the big year is a button too)</td></tr>
+    <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>Playback speed</td></tr>
+    <tr><td><kbd>+</kbd> <kbd>−</kbd></td><td>Zoom the map</td></tr>
+    <tr><td><kbd>H</kbd> or <kbd>Home</kbd></td><td>Reset the view</td></tr>
+    <tr><td><kbd>M</kbd></td><td>Sound on / off</td></tr>
+    <tr><td><kbd>F</kbd></td><td>Fullscreen</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>Close the topmost card, sheet, or panel</td></tr>
+    <tr><td><kbd>Tab</kbd> to the city dots, then arrows</td><td>Walk the cities on the map, most notable first (with the Cities layer on)</td></tr>
+  </table></div>
+  <p><strong>Color-blind support:</strong> the legend's “Color-blind palette” switch
+  recolors the religion and language views with alternate palettes tested against
+  simulated deuteranopia and protanopia, so families that share the screen stay distinguishable. The legend and panel always name each family in words, never by color alone. Polity colors carry no meaning by design (the map key is
+  the label, not the hue), so they need no safe variant. The switch is opt-in:
+  the default look stays exactly as designed. Accessibility audit passes ran in
+  July and August 2026; remaining refinements are tracked for future rounds.</p>
+</section>
+
+<section id="contact">
+  <span class="eyebrow">The author</span>
+  <h2>Contact &amp; more work</h2>
+  <p>The Atlas is built by <strong>Michael Manning</strong>. Questions, corrections,
+  and collaboration are welcome. If the map got something wrong, telling me is the fastest way to get it fixed.</p>
+  <div class="contacts">
+    <a class="contact-card" href="mailto:mikemanning1223@gmail.com">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="2.5" y="5" width="19" height="14" rx="2.5"/>
+        <path d="M3.5 6.5 12 13l8.5-6.5"/>
+      </svg>
+      <span class="cc-t"><strong>Email</strong><em>mikemanning1223@gmail.com</em></span>
+    </a>
+    <a class="contact-card" href="https://www.linkedin.com/in/michaelmanningqu/"
+      target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="2.5" y="2.5" width="19" height="19" rx="4"/>
+        <circle cx="8" cy="8.2" r="1.1" fill="currentColor" stroke="none"/>
+        <path d="M8 11.2v6"/>
+        <path d="M12.4 17.2v-6m0 2.4c0-1.4 1-2.4 2.3-2.4s2.3 1 2.3 2.4v3.6"/>
+      </svg>
+      <span class="cc-t"><strong>LinkedIn</strong><em>Resume</em></span>
+    </a>
+    <a class="contact-card" href="https://public.tableau.com/app/profile/michaelmanning/vizzes"
+      target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <!-- Tableau's nine-plus cluster, 4-fold symmetric so it reads as a CIRCLE:
+             big center; four equal diagonals at equal dx=dy; four equal axis pluses
+             (N/S/E/W) at the same size and distance; square-cut ends -->
+        <path stroke-width="1.7" d="M9.2 12h5.6M12 9.2v5.6"/>
+        <path stroke-width="1.5" d="M5.4 7.6h4.4M7.6 5.4v4.4M14.2 7.6h4.4M16.4 5.4v4.4
+          M5.4 16.4h4.4M7.6 14.2v4.4M14.2 16.4h4.4M16.4 14.2v4.4"/>
+        <path stroke-width="1.2" d="M10.4 4h3.2M12 2.4v3.2M10.4 20h3.2M12 18.4v3.2
+          M2.4 12h3.2M4 10.4v3.2M18.4 12h3.2M20 10.4v3.2"/>
+      </svg>
+      <span class="cc-t"><strong>Tableau Public</strong><em>Data visualization portfolio</em></span>
+    </a>
+    <!-- Support card (live 2026-07-07). Ko-fi over BMAC: 0% vs 5% platform fee,
+         donors need no account. Lives ONLY here on the About page — never in the
+         app chrome; no ads ever. Tip links are public URLs, no secrets involved. -->
+    <a class="contact-card" href="https://ko-fi.com/mikemanning1223"
+      target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 9h12v6.5a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V9Z"/>
+        <path d="M16 10.5h1.8a2.6 2.6 0 0 1 0 5.2H16"/>
+        <path d="M10 14.4C8.6 13.2 7.9 12.3 8.5 11.4 9 10.7 10 10.9 10 11.7c0-.8 1-1 1.5-.3.6.9-.1 1.8-1.5 3Z"/>
+        <path d="M7.5 5.5c0-.9.9-.9.9-1.8M11.5 5.5c0-.9.9-.9.9-1.8"/>
+      </svg>
+      <span class="cc-t"><strong>Ko-fi</strong><em>Support this project</em></span>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="site">
+  <p>Data from <a href="https://www.wikidata.org" target="_blank" rel="noopener">Wikidata</a> ·
+  Text from <a href="https://en.wikipedia.org" target="_blank" rel="noopener">Wikipedia</a>
+  (CC BY-SA 4.0) · Made with <a href="https://www.naturalearthdata.com" target="_blank"
+  rel="noopener">Natural Earth</a></p>
+  <p>The World Then · an interactive atlas of world history · <a href="index.html">back to the map</a></p>
+</footer>
+
+</div>
+
+<!-- the sky keeps a secret; see the .sf-dipper CSS block for what it knows -->
+<div class="sf-dipper" id="sfDipper" aria-hidden="false">
+  <svg viewBox="0 0 100 60" preserveAspectRatio="none" aria-hidden="true"><g id="sfLines"></g></svg>
+</div>
+<p class="sf-reveal" id="sfReveal" role="status">
+  <b>The Greeks saw a Great Bear. The Chinese saw the Northern Ladle.
+  The Arabs saw a bier and its mourners. Same stars.</b><br>
+  Different peoples, different names — for the sky, as for the land below it.
+  <span class="sf-wake">You've woken the sky's oldest clock —
+  <a href="index.html">watch the map</a></span>
+</p>
+
+<script>
+  // file:// has no server, so index.html can't fetch its data files there —
+  // point every "back to the map" link at the self-contained build instead.
+  if (location.protocol === "file:")
+    document.querySelectorAll('a[href="index.html"]').forEach(a => { a.href = "the-world-then.html"; });
+</script>
+
+<script>
+  // ---- the constellation ----------------------------------------------------
+  // Big Dipper, hidden in the FIXED sky (it must not scroll — the rest of the
+  // starfield doesn't). Wide screens: right margin, traced by hover. Narrow
+  // screens: it waits behind the text, low and center, revealed where the page
+  // ends into open sky — trace by tapping, or dragging star to star. Either
+  // way: all seven and the ladle pours, stardust spills, becomes a comet, and
+  // the map's Halley layer wakes (localStorage "atlas-comet").
+  (function(){
+    const dip=document.getElementById("sfDipper");
+    const STARS=[[8,22],[21,13],[33,12],[45,17],[49,35],[66,40],[63,19]];
+    // handle: Alkaid-Mizar-Alioth-Megrez, then the bowl closed: Megrez-Phecda-Merak-Dubhe-Megrez
+    const EDGES=[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,3]];
+    const linesG=document.getElementById("sfLines"),
+      reveal=document.getElementById("sfReveal"),
+      reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const lit=new Set(), lines=new Map(), btns=[];
+    STARS.forEach((p,i)=>{
+      const s=document.createElement("button");
+      s.className="sf-star"; s.setAttribute("aria-label","A star");
+      s.style.setProperty("--x",p[0]+"%"); s.style.setProperty("--y",(p[1]/60*100)+"%");
+      s.style.setProperty("--d",(9+i*1.7)+"s"); s.style.setProperty("--dl",(-i*2.9)+"s");
+      s.addEventListener("pointerenter",()=>light(i));
+      s.addEventListener("click",()=>light(i)); // keyboard path
+      dip.appendChild(s); btns.push(s);
+    });
+    // touch tracing: a finger dragged across the sky lights the stars it crosses
+    // (touch implicitly captures to the first star, so pointerenter never fires
+    // on the rest — hit-test the finger's true position instead)
+    dip.addEventListener("pointermove",e=>{
+      const j=btns.indexOf(document.elementFromPoint(e.clientX,e.clientY));
+      if(j>-1) light(j);
+    });
+    EDGES.forEach(e=>{
+      const l=document.createElementNS("http://www.w3.org/2000/svg","line");
+      l.setAttribute("x1",STARS[e[0]][0]); l.setAttribute("y1",STARS[e[0]][1]);
+      l.setAttribute("x2",STARS[e[1]][0]); l.setAttribute("y2",STARS[e[1]][1]);
+      linesG.appendChild(l); lines.set(e.join("-"),l);
+    });
+    let running=false;
+    const unlocked=()=>{ try{ return localStorage.getItem("atlas-comet")==="1"; }catch(e){ return false; } };
+    function light(i){
+      if(running||lit.has(i)) return;
+      lit.add(i); btns[i].classList.add("on");
+      EDGES.forEach(e=>{ if(lit.has(e[0])&&lit.has(e[1])) lines.get(e.join("-")).classList.add("on"); });
+      if(lit.size===STARS.length) complete();
+    }
+    function complete(){
+      running=true;
+      try{ localStorage.setItem("atlas-comet","1"); }catch(e){}
+      dip.classList.add("burn");
+      // the reveal needs real dwell time: it fades in over the hushed page, and eyes
+      // need a beat to adjust before they can even start reading — so it holds ~15s
+      // after the fade (click dismisses early)
+      if(reduced){ reveal.classList.add("on"); finish(16000); return; }
+      document.body.classList.add("sf-hush");
+      setTimeout(()=>{ dip.classList.add("pouring"); },900);
+      setTimeout(pour,1600);
+      setTimeout(comet,2700);
+      setTimeout(()=>{ reveal.classList.add("on"); },3600);
+      clearTimeout(finish._arm); finish._arm=setTimeout(()=>finish(0),20000);
+    }
+    function pour(){ // spill from the tipped bowl's lip, at its TRUE screen position
+      const m=btns[5].getBoundingClientRect(); // Merak — the pouring corner
+      for(let i=0;i<16;i++){
+        const d=document.createElement("i"); d.className="sf-drop";
+        d.style.cssText=`left:${m.left+m.width/2+(Math.random()*10-5)}px;`+
+          `top:${m.top+m.height/2}px;`+
+          `--dx:${(-20-Math.random()*40).toFixed(0)}px;--dy:${(120+Math.random()*90).toFixed(0)}px;`+
+          `--dl:${(i*0.055).toFixed(2)}s`;
+        document.body.appendChild(d); setTimeout(()=>d.remove(),2700);
+      }
+    }
+    function comet(){ // the spill leaves as a comet, arcing over the hushed page
+      const m=btns[5].getBoundingClientRect();
+      const c=document.createElement("i"); c.className="sf-comet";
+      // the dipper sits near the viewport bottom on narrow screens — keep the
+      // launch on-screen, and give the climb a floor so phones get a real arc
+      const x0=m.left-60, y0=Math.min(m.top+140,innerHeight-40);
+      c.style.transform=`translate(${x0}px,${y0}px) rotate(160deg)`;
+      c.style.transition="transform 2.6s cubic-bezier(.3,0,.7,.4), opacity .5s 2.1s";
+      document.body.appendChild(c);
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        const dy=Math.max(innerWidth*0.28,innerHeight*0.45);
+        c.style.transform=`translate(${-innerWidth*0.35}px,${y0-dy}px) rotate(160deg)`;
+        c.style.opacity="0";
+      }));
+      setTimeout(()=>c.remove(),3400);
+    }
+    function finish(delay){
+      // kill the standing auto-dismiss — an orphaned one fired 20s later and wiped
+      // a re-trace already in progress
+      clearTimeout(finish._arm); clearTimeout(finish._t);
+      finish._t=setTimeout(()=>{
+        document.body.classList.remove("sf-hush");
+        dip.classList.remove("pouring","burn"); dip.classList.add("done");
+        reveal.classList.remove("on");
+        running=false; // tracing it again replays the pour
+        lit.clear(); btns.forEach(b=>b.classList.remove("on"));
+      },delay);
+    }
+    reveal.addEventListener("click",()=>{ if(running) finish(0); }); // dismiss early
+    if(unlocked()) dip.classList.add("done"); // the faint shape stays, quietly
+  })();
+</script>
+
+<button class="totop" id="totop" aria-label="Back to top" title="Back to top">↑</button>
+<script>
+  // back-to-top (the last of the page's three scripts): show the button after one
+  // screenful; scrollTo's default
+  // "auto" behavior defers to the CSS scroll-behavior (smooth, or instant under
+  // prefers-reduced-motion — see the html rules above)
+  const totop=document.getElementById("totop");
+  addEventListener("scroll",()=>totop.classList.toggle("show",scrollY>innerHeight*0.9),{passive:true});
+  totop.addEventListener("click",()=>scrollTo(0,0));
+</script>
+</body>
+</html>

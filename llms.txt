@@ -22,7 +22,10 @@ the pages below carry the project's prose and provenance.
   project (A. Ourednik), and Natural Earth; snapshot date shown on the About page
 - Borders are approximate by design — source sheets are centuries apart in the
   ancient world, decades in the modern; the About page discloses coarseness
-- Licenses: code PolyForm Noncommercial 1.0.0; curated content CC BY-NC-SA 4.0;
-  border geometry GPL-3.0 (inherited); Wikipedia text CC BY-SA 4.0
+- Licenses: code The World Then Noncommercial ShareAlike License 1.0 (custom,
+  noncommercial, share-alike with matching source; full text at
+  https://theworldthen.com/LICENSE.md); curated content CC BY-NC-SA 4.0;
+  border geometry GPL-3.0 (inherited); Wikipedia text CC BY-SA 4.0; source at
+  https://github.com/mikeroni/theworldthen (source/, tagged per release)
 - Built with AI assistance, disclosed plainly on the About page
 - Contact: see the About page
