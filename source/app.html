@@ -2058,16 +2058,20 @@ function halleyFly(){
   }));
   setTimeout(()=>c.remove(),4400);
 }
-function cityPop(ct,year){
+// (215b, reviewer) the VALUE and its PROVENANCE come from ONE calculation: an
+// observation at its own date, an interpolation between two dated figures, or a
+// figure carried outside the observed interval — the dot size and the words agree.
+function cityPopAt(ct,year){
   const p=ct.p; if(!p||!p.length) return null; // no series -> flat minimum dot
-  if(year<=p[0][0]) return p[0][1];
+  if(year<=p[0][0]) return {v:p[0][1],kind:year===p[0][0]?"obs":"before",y0:p[0][0]};
   for(let i=0;i<p.length-1;i++){
-    if(year<=p[i+1][0]){ const dy=p[i+1][0]-p[i][0]; if(!dy) return p[i+1][1]; // same-year pair: no NaN dot
+    if(year<=p[i+1][0]){ const dy=p[i+1][0]-p[i][0]; if(!dy||year===p[i+1][0]) return {v:p[i+1][1],kind:"obs",y0:p[i+1][0]}; // same-year pair: no NaN dot
       const t=(year-p[i][0])/dy;
-      return p[i][1]+(p[i+1][1]-p[i][1])*t; }
+      return {v:p[i][1]+(p[i+1][1]-p[i][1])*t,kind:"interp",y0:p[i][0],y1:p[i+1][0]}; }
   }
-  return p[p.length-1][1];
+  const l=p[p.length-1]; return {v:l[1],kind:year===l[0]?"obs":"after",y0:l[0]};
 }
+function cityPop(ct,year){ const r=cityPopAt(ct,year); return r?r.v:null; }
 // baked layer has ~800 cities; cap the DOM at the 300 most-notable alive at once —
 // beyond that the dots read as noise and the join cost climbs for no information
 const CITY_DOT_CAP=300;
@@ -2091,8 +2095,21 @@ function renderCities(year){
     const a=0.35+0.4*Math.min(1,(year-ct.f)/40);
     return {ct,xy,r,a};
   }).filter(Boolean);
-  if(live.length>CITY_DOT_CAP)
-    live=live.slice().sort((a,b)=>(b.ct.sl||0)-(a.ct.sl||0)).slice(0,CITY_DOT_CAP);
+  // (215) the cap is taken VIEWPORT-FIRST: cities inside the visible stage (with a
+  // margin) rank ahead of everything off-screen, then by notability within each
+  // group. Zooming into a region now surfaces its own cities — Gaza City ranked
+  // 422nd worldwide and could never appear, however far the user zoomed
+  // (Israel/Palestine representation review §3). Zoomed out, the pick is the old
+  // global top-300; off-screen dots still fill the cap so panning stays smooth.
+  if(live.length>CITY_DOT_CAP){
+    // xy is the BASE projection; the dots live under the zoom group, so test the
+    // zoom-transformed point against the stage (the first draft compared pre-zoom
+    // coordinates and counted the whole world as visible)
+    const M=40, inView=p=>{ const [x,y]=zt.apply(p.xy); return x>=-M&&x<=W+M&&y>=-M&&y<=H+M; };
+    const bySl=(a,b)=>(b.ct.sl||0)-(a.ct.sl||0);
+    const vis=live.filter(inView).sort(bySl), rest=live.filter(p=>!inView(p)).sort(bySl);
+    live=vis.concat(rest).slice(0,CITY_DOT_CAP);
+  }
   // same tiny-landmass suppression as event markers — a capital's screen-constant
   // halo over a small island ate the polity tap identically (parity catch 07-21)
   live=live.filter(tinyClear(year));
@@ -3395,13 +3412,29 @@ const fmtPop=p=>{ if(p>=9.5e5) return (p/1e6).toFixed(1).replace(/\.0$/,"")+" mi
 // (185 A02, a11y review) the same three facts the pointer tooltip shows, as a
 // city dot's accessible name — refreshed by renderCities on its own cadence,
 // so the spoken population tracks the selected year like the dot size does
-const cityAria=ct=>{ const pop=cityPop(ct,yearAt(+scrub.value));
-  return `${ct.n} — founded ${fmtYear(ct.f)}`+(pop!=null?` — about ${fmtPop(pop)} people, estimated`:""); };
+// (215/215b) a city's anchor year is a FOUNDING only when the data carries an
+// inception (fk "inc"); otherwise it is the earliest population figure in this
+// dataset and the words say the founding date is unavailable. Population words
+// come from the same calculation as the dot (cityPopAt), so an interpolated or
+// carried figure is described as such (Israel/Palestine representation review §3
+// + the release-215 review).
+// (215b, reviewer) a population observation is NOT a historical first attestation:
+// when the anchor is a population year the words say the founding date is
+// unavailable and name the earliest population data in THIS dataset.
+const cityAnchor=ct=>ct.fk==="pop"?`founding date unavailable · earliest population data in this dataset: ${fmtYear(ct.f)}`:`founded ${fmtYear(ct.f)}`;
+// population words — one function for the tooltip AND the accessible name, from the
+// same calculation as the dot size (cityPopAt): "figure", never "count"
+const cityPopText=(ct,year)=>{ const r=cityPopAt(ct,year); if(!r) return "";
+  if(r.kind==="obs") return `about ${fmtPop(r.v)} people (${fmtYear(r.y0)} figure)`;
+  if(r.kind==="interp") return `about ${fmtPop(r.v)} people, interpolated between ${fmtYear(r.y0)} and ${fmtYear(r.y1)} figures`;
+  return `no population figure for ${fmtYear(year)}; ${r.kind==="before"?"earliest":"latest"} available: about ${fmtPop(r.v)} people (${fmtYear(r.y0)})`; };
+const cityAria=ct=>{ const y=yearAt(+scrub.value), t=cityPopText(ct,y);
+  return `${ct.n} — ${cityAnchor(ct)}`+(t?` — ${t}`:""); };
 function showCityTip(ev,d){
-  const pop=cityPop(d.ct,yearAt(+scrub.value));
+  const y=yearAt(+scrub.value), t=cityPopText(d.ct,y);
   tip.innerHTML=`<div class="t-name">${esc(d.ct.n)}</div>
-    <div class="t-span">founded ${fmtYear(d.ct.f)}</div>
-    ${pop!=null?`<div class="t-desc">≈ ${fmtPop(pop)} people · estimated</div>`:""}`;
+    <div class="t-span">${cityAnchor(d.ct)}</div>
+    ${t?`<div class="t-desc">${esc(t)}</div>`:""}`;
   tip.classList.add("on");
   tip._evQid=null; tip._city=d.ct.n; tip._war=null;
   placeTip(ev);
