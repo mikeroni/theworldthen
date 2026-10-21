@@ -2,8 +2,8 @@
 <!-- The World Then — Copyright (c) 2026 Michael Manning (The World Then).
      Code: The World Then Noncommercial ShareAlike License 1.0 · Content: CC BY-NC-SA 4.0
      · third-party data and libraries keep their own licenses · full terms:
-     https://theworldthen.com/LICENSE.md · this build is release 218; its source:
-     https://github.com/mikeroni/theworldthen/tree/release-218/source -->
+     https://theworldthen.com/LICENSE.md · this build is release 219; its source:
+     https://github.com/mikeroni/theworldthen/tree/release-219/source -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -289,6 +289,7 @@
   svg{display:block;width:100%;height:100%;position:relative;z-index:1;touch-action:none}
   .graticule{stroke:var(--line);stroke-width:.5;fill:none;opacity:.5}
   .sphere{fill:var(--sea)}
+  .halo{pointer-events:none}
   .land{fill:var(--land);stroke:var(--land-edge);stroke-width:.5;vector-effect:non-scaling-stroke}
   /* hydrography: the reason early civilization is WHERE it is — kept at whisper level */
   .river{fill:none;stroke:#4d629f;stroke-width:.9;opacity:.65;vector-effect:non-scaling-stroke;pointer-events:none}
@@ -933,7 +934,7 @@
          comment: the standalone travels alone and the online About page will name a
          later release after the next deploy, so this link is pinned to THIS build's
          release tag (the tag's root shows LICENSE.md + source/). -->
-    <a class="about-link src" href="https://github.com/mikeroni/theworldthen/tree/release-218" target="_blank" rel="noopener" title="License and source code for release 218">source</a>
+    <a class="about-link src" href="https://github.com/mikeroni/theworldthen/tree/release-219" target="_blank" rel="noopener" title="License and source code for release 219">source</a>
   </header>
   <div id="stage">
     <canvas id="stars"></canvas>
@@ -1589,6 +1590,12 @@ let currentZoom=1, _cityLblGate=false;
 // panel, resize) and applied to the zoom extent, the flight clamps and the sphere
 // sampling precision. Phone portrait ≈ 55×, panel-open strip ≈ 64×, landscape ≈ 37×.
 const ZOOM_BASE=16, ZOOM_CAP=64;
+// (218k) halo fade: the gaussian shadow (radius `blur`, CSS px at the 1280×800 reference
+// fit) of the filled sphere — brightest at the edge, thin. Sampled profile outward from the
+// edge at these values: 34 → 21 → 11 → 5 → 2 → 0 over 10 px. Tried and rejected (Mike
+// 10-21): blur 18 at .85/.65/.53 (bright, and a 20 px band), .45 (barely there), an
+// offset ring (a glow, not a fade); 217's CSS blur peaked at 9 over ~14 px.
+const HALO={color:"rgba(127,230,216,0.36)",blur:10};
 const REF_SCALE=d3.geoNaturalEarth1().fitExtent([[14,14],[1280-14,800-92]],{type:"Sphere"}).scale();
 let ZOOM_MAX=ZOOM_BASE;
 const zoomMaxFor=()=>Math.max(ZOOM_BASE,Math.min(ZOOM_CAP,ZOOM_BASE*REF_SCALE/projection.scale()));
@@ -2539,12 +2546,33 @@ function resize(){
   // on his iPhone, reproduced in the iOS simulator. feGaussianBlur with the same 7px
   // deviation, an explicit region and sRGB interpolation renders the same soft rim on
   // every engine; the stroke, width and colour are unchanged.
-  defs.append("filter").attr("id","haloBlur").attr("x","-10%").attr("y","-10%").attr("width","120%").attr("height","120%")
-    .attr("color-interpolation-filters","sRGB").append("feGaussianBlur").attr("stdDeviation",7);
+  // (218k) the glow is RENDERED ONCE: the sphere outline is stroked with a shadow blur
+  // on an offscreen canvas (a true gaussian fade, identical on every engine — the CSS
+  // blur was ignored by WebKit and drew a solid rim; the SVG filter was re-rasterized
+  // on every pan and read as lag), the inside is cut away, and the result is one
+  // <image> under the sea fill that pans and zooms with the map as a plain bitmap.
+  // Per-frame cost: nothing. Stepped stroke bands were tried and rejected (Mike 10-20:
+  // "crappy layers of rings, not a subtle fade"). Regenerated at every refit.
   const sphereD=geoPath({type:"Sphere"});
-  gSphere.append("path").attr("class","halo").attr("d",sphereD).attr("fill","none")
-    .attr("stroke","rgba(127,230,216,0.22)").attr("stroke-width",3)
-    .attr("filter","url(#haloBlur)");
+  try{
+    const dpr=Math.min(window.devicePixelRatio||1,2), cvs=document.createElement("canvas");
+    cvs.width=Math.ceil(W*dpr); cvs.height=Math.ceil(H*dpr);
+    const cx=cvs.getContext("2d"); cx.scale(dpr,dpr);
+    const p2=new Path2D(sphereD);
+    // SHADOW-ONLY: the sphere is filled far off-canvas and only its shadow lands in place —
+    // a pure gaussian fade that is brightest AT the globe and gone within ~10 px (Mike
+    // 10-21: brightest closest to the earth, not bright, and thin; a ring offset outside the
+    // edge read as "a glow instead of a fade" and was rejected). The radius follows the
+    // fitted globe (HALO.blur is for the 1280×800 reference fit), so a phone's globe gets a
+    // proportionally small fade.
+    const OFF=100000, k=Math.max(.25,Math.min(1.5,projection.scale()/REF_SCALE));
+    cx.shadowColor=HALO.color; cx.shadowBlur=HALO.blur*k*dpr; cx.shadowOffsetX=OFF*dpr; cx.shadowOffsetY=0; cx.fillStyle="#000";
+    cx.save(); cx.translate(-OFF,0); cx.fill(p2); cx.restore();
+    cx.shadowColor="transparent"; cx.shadowBlur=0; cx.shadowOffsetX=0;
+    cx.globalCompositeOperation="destination-out"; cx.fill(p2); // glow outside only
+    gSphere.append("image").attr("class","halo").attr("href",cvs.toDataURL("image/png"))
+      .attr("x",0).attr("y",0).attr("width",W).attr("height",H).attr("preserveAspectRatio","none");
+  }catch(e){ /* no canvas: the globe simply has no glow */ }
   // (170) the drawn sea edge and the polity clip are sampled far finer than d3's
   // default ~0.7px tolerance: that chord slack scales with the camera (up to ~11px at
   // ZOOM_MAX=16), which is headroom the antimeridian wrap copies lean on — their
@@ -4098,8 +4126,13 @@ function fetchDetails(c){
     // (218i) a coarse date is an INTERVAL for eligibility (its earliest possible birth,
     // its latest possible death — the outer bounds), so a century never acts as a
     // falsely exact cutoff behind its displayed label; bare legacy years are unchanged
-    .filter(p=>{ const by=yrLo(p.by,p.byp)??(p.dy!=null?yrHi(p.dy,p.dyp)-60:null);
-      return by==null || (by<=pHi && (yrHi(p.dy,p.dyp) ?? by+80)>=c.born-40); })
+    // (218j) the proxies carry the WHOLE interval: an unknown death is proxied from the
+    // LATEST possible birth (+80), an unknown birth from the EARLIEST possible death (−60),
+    // so a coarse known endpoint never narrows the unknown one. Legacy rows (no precision)
+    // reduce to the old by<=pHi && (dy ?? by+80)>=born−40 exactly.
+    .filter(p=>{ const bLo=p.by!=null?yrLo(p.by,p.byp):(p.dy!=null?yrLo(p.dy,p.dyp)-60:null);
+      const dHi=p.dy!=null?yrHi(p.dy,p.dyp):(p.by!=null?yrHi(p.by,p.byp)+80:null);
+      return bLo==null || (bLo<=pHi && dHi>=c.born-40); })
     .map(p=>Object.assign({},p,{img:imgUrl(p.img)}));
   // story beats (BAKE item 5): baked per-qid, era-sliced like events so a
   // segment's tour never dwells on another incarnation's moments; a beat must
