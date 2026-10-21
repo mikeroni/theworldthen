@@ -47,7 +47,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 # index / about / the standalone; nothing else changes at launch. The export
 # validator (tools/export-public.mjs) refuses a mismatch either way.
 LAUNCH = "--launch" in sys.argv[1:]
-RELEASE = "219"
+RELEASE = "220"
 RELEASE_TOKEN = "@@RELEASE@@"
 def release(page, name, expect):
     assert page.count(RELEASE_TOKEN) == expect, f"{name}: expected {expect} release token(s), found {page.count(RELEASE_TOKEN)}"
