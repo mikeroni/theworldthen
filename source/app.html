@@ -561,7 +561,13 @@
      kept its lines, so two-line titles spilled 3.8px into the next row and three-line ones
      20.7px. flex-shrink:0 on the rows (and the label) lets each full title set its row's
      height; the cap stays on the LIST, which scrolls. No clipping, no smaller type. */
+  /* (218g) sticky header: the label + a Close button that stays reachable while the list
+     scrolls; 32px touch target, visible keyboard focus, same background as the list. */
+  .tapchoice .tc-head{position:sticky;top:-8px;z-index:1;flex-shrink:0;display:flex;align-items:center;gap:6px;margin:-8px -8px 0;padding:8px 8px 0;background:rgba(13,10,20,.97)}
   .tapchoice .tc-lab{flex-shrink:0;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--magenta);font-family:'Inter';padding:2px 6px 5px}
+  .tapchoice .tc-head .tc-lab{flex:1}
+  .tapchoice button.tc-close{flex:none;width:32px;min-width:32px;min-height:32px;padding:0;justify-content:center;align-items:center;font-size:20px;line-height:1;color:var(--ink-faint);border-radius:8px}
+  .tapchoice button.tc-close:hover,.tapchoice button.tc-close:focus-visible{color:var(--ink);background:rgba(255,255,255,.08)}
   .tapchoice button{flex-shrink:0;font:inherit;font-size:13px;line-height:1.3;text-align:left;color:var(--ink);background:none;border:0;border-radius:8px;
     padding:8px 8px;min-height:36px;cursor:pointer;display:flex;gap:8px;align-items:baseline;width:100%}
   .tapchoice button:hover,.tapchoice button:focus-visible{background:rgba(255,255,255,.08);outline:none}
@@ -2512,11 +2518,19 @@ function resize(){
   grad.append("stop").attr("offset","82%").attr("stop-color","rgba(127,230,216,0)");
   grad.append("stop").attr("offset","95%").attr("stop-color","rgba(127,230,216,0.18)");
   grad.append("stop").attr("offset","100%").attr("stop-color","rgba(127,230,216,0)");
-  // a slightly enlarged sphere path behind, blurred, for the halo
+  // a slightly enlarged sphere path behind, blurred, for the halo.
+  // (218g) the blur is an SVG filter primitive, not a CSS filter function: WebKit (iOS
+  // Safari AND iOS Chrome, which must use WebKit) did not apply `filter: blur(7px)` to
+  // this path and drew the rim as a crisp solid teal line — Mike's "solid green halo"
+  // on his iPhone, reproduced in the iOS simulator. feGaussianBlur with the same 7px
+  // deviation, an explicit region and sRGB interpolation renders the same soft rim on
+  // every engine; the stroke, width and colour are unchanged.
+  defs.append("filter").attr("id","haloBlur").attr("x","-10%").attr("y","-10%").attr("width","120%").attr("height","120%")
+    .attr("color-interpolation-filters","sRGB").append("feGaussianBlur").attr("stdDeviation",7);
   const sphereD=geoPath({type:"Sphere"});
-  gSphere.append("path").attr("d",sphereD).attr("fill","none")
+  gSphere.append("path").attr("class","halo").attr("d",sphereD).attr("fill","none")
     .attr("stroke","rgba(127,230,216,0.22)").attr("stroke-width",3)
-    .attr("filter","blur(7px)").style("filter","blur(7px)");
+    .attr("filter","url(#haloBlur)");
   // (170) the drawn sea edge and the polity clip are sampled far finer than d3's
   // default ~0.7px tolerance: that chord slack scales with the camera (up to ~11px at
   // ZOOM_MAX=16), which is headroom the antimeridian wrap copies lean on — their
@@ -3471,8 +3485,11 @@ svg.node().addEventListener("click",(e)=>{
 },true);
 function openTapChoice(cands,x,y){
   tapChoice._prev=document.activeElement; tapChoice._cands=cands;
-  tapChoice.innerHTML=`<div class="tc-lab">Under your tap</div>`+cands.map((c,i)=>
-    `<button type="button" data-i="${i}"><span class="tc-kind">${c.kind}</span><span class="tc-name">${esc(c.name)}</span>${c.kind==="event"&&c.year!=null?`<span class="tc-yr">${esc(fmtYear(c.year))}</span>`:""}</button>`).join("");
+  // (218g) a visible Close control in a sticky header (reachable while a long list
+  // scrolls); candidate rows carry .tc-opt and are the ONLY buttons the delegated
+  // click / arrow handlers select — Close is handled on its own (Mike 10-19).
+  tapChoice.innerHTML=`<div class="tc-head"><div class="tc-lab">Under your tap</div><button type="button" class="tc-close" aria-label="Close">×</button></div>`+cands.map((c,i)=>
+    `<button type="button" class="tc-opt" data-i="${i}"><span class="tc-kind">${c.kind}</span><span class="tc-name">${esc(c.name)}</span>${c.kind==="event"&&c.year!=null?`<span class="tc-yr">${esc(fmtYear(c.year))}</span>`:""}</button>`).join("");
   hideTip();
   const host=stage.getBoundingClientRect(); tapChoice.hidden=false;
   const w=tapChoice.offsetWidth,h=tapChoice.offsetHeight;
@@ -3480,10 +3497,25 @@ function openTapChoice(cands,x,y){
   if(left+w>host.width-8) left=Math.max(8,x-host.left-w-12);
   if(top+h>host.height-8) top=Math.max(8,y-host.top-h-12);
   tapChoice.style.left=Math.round(left)+"px"; tapChoice.style.top=Math.round(top)+"px";
-  tapChoice.querySelector("button").focus({preventScroll:true});
+  tapChoice.querySelector(".tc-opt").focus({preventScroll:true});
   document.addEventListener("pointerdown",tapOutside,true);
 }
-function tapOutside(e){ if(tapChoice.contains(e.target)) return; closeTapChoice(false); }
+// (218g) an outside tap DISMISSES ONLY. The list closes on pointerdown, so the click
+// that follows the same gesture used to land on whatever was underneath (a polity
+// panel opened, a marker activated). The suppressor is bound to THAT pointer: armed
+// on its pointerup and disarmed on the next macrotask, so a pan or pinch (no click)
+// leaves nothing behind and the next deliberate tap works normally. No global flag.
+function tapOutside(e){
+  if(tapChoice.contains(e.target)) return;
+  closeTapChoice(false);
+  const id=e.pointerId;
+  const swallow=(c)=>{ c.stopPropagation(); c.preventDefault(); };
+  const cleanup=()=>{ document.removeEventListener("pointerup",onUp,true); document.removeEventListener("pointercancel",cleanup,true); };
+  const onUp=(u)=>{ if(u.pointerId!==id) return; cleanup();
+    document.addEventListener("click",swallow,true);
+    setTimeout(()=>document.removeEventListener("click",swallow,true),0); };
+  document.addEventListener("pointerup",onUp,true); document.addEventListener("pointercancel",cleanup,true);
+}
 function closeTapChoice(restore){
   if(tapChoice.hidden) return;
   tapChoice.hidden=true; document.removeEventListener("pointerdown",tapOutside,true);
@@ -3491,14 +3523,15 @@ function closeTapChoice(restore){
   if(restore){ const f=(p&&p.isConnected&&p!==document.body)?p:gCity.node(); if(f&&f.focus) f.focus({preventScroll:true}); }
 }
 tapChoice.addEventListener("click",(e)=>{
-  const b=e.target.closest("button"); if(!b||!tapChoice._cands) return;
+  if(e.target.closest(".tc-close")){ SND.click(-1); closeTapChoice(true); return; } // (218g) explicit Close: nothing selected, focus back to the marker
+  const b=e.target.closest(".tc-opt"); if(!b||!tapChoice._cands) return;
   const c=tapChoice._cands[+b.dataset.i]; closeTapChoice(false); SND.click();
   if(c.kind==="city"){ const r=c.el.querySelector(".city").getBoundingClientRect(); showCityTip({clientX:r.left+r.width/2,clientY:r.top+r.height/2},c.d); }
   else { tapChoice._pass=true; c.el.dispatchEvent(new MouseEvent("click",{bubbles:true,cancelable:true,view:window})); }
 });
 tapChoice.addEventListener("keydown",(e)=>{
   if(e.key==="Escape"){ e.preventDefault(); e.stopPropagation(); SND.click(-1); closeTapChoice(true); return; }
-  if(e.key==="ArrowDown"||e.key==="ArrowUp"){ e.preventDefault(); const bs=[...tapChoice.querySelectorAll("button")]; const i=bs.indexOf(document.activeElement);
+  if(e.key==="ArrowDown"||e.key==="ArrowUp"){ e.preventDefault(); const bs=[...tapChoice.querySelectorAll(".tc-opt")]; const i=bs.indexOf(document.activeElement); // (218g) rows only; from Close either arrow lands on the first row
     bs[e.key==="ArrowDown"?Math.min(bs.length-1,i+1):Math.max(0,i-1)].focus(); }
 });
 // (169 A4/I6) with a resting pointer, scrub and autoplay changed the map under a
@@ -4048,8 +4081,11 @@ function fetchDetails(c){
     // Egypt chapter (2000-525 BCE). Proxy by ≈ dy−60; people with NO dates at all
     // still pass (can't be proven out-of-era; the one era-wrong case, Mary the
     // Jewess, is a receipted bake-side PEOPLE_DEMOTE).
-    .filter(p=>{ const by=p.by??(p.dy!=null?p.dy-60:null);
-      return by==null || (by<=pHi && (p.dy ?? by+80)>=c.born-40); })
+    // (218i) a coarse date is an INTERVAL for eligibility (its earliest possible birth,
+    // its latest possible death — the outer bounds), so a century never acts as a
+    // falsely exact cutoff behind its displayed label; bare legacy years are unchanged
+    .filter(p=>{ const by=yrLo(p.by,p.byp)??(p.dy!=null?yrHi(p.dy,p.dyp)-60:null);
+      return by==null || (by<=pHi && (yrHi(p.dy,p.dyp) ?? by+80)>=c.born-40); })
     .map(p=>Object.assign({},p,{img:imgUrl(p.img)}));
   // story beats (BAKE item 5): baked per-qid, era-sliced like events so a
   // segment's tour never dwells on another incarnation's moments; a beat must
@@ -4073,6 +4109,19 @@ const fmtY=y=>y==null?"?":(y=+y,y<0?Math.abs(y)+" BCE":(y===0?1:y)+" CE"); // ye
 // the fetch-day refetch brings their precision — never guess a precision.
 // BCE decades: "970s BCE" = 979-970 BCE, so floor(|y|/10) is right either era.
 const ORD=n=>{const t=n%10,h=n%100;return n+(h>=11&&h<=13?"th":t===1?"st":t===2?"nd":t===3?"rd":"th");};
+// (218i) PRECISION INTERVAL (mirrors tools/bake/refresh.mjs precInterval; a net pins them equal):
+// century c = (c-1)*100+1..c*100 CE, BCE mirrored; decade -80 = 89..80 BCE; a year is itself.
+function precInterval(y,p){
+  if(y==null) return null;
+  if(p==null||p>=9) return [y,y];
+  const a=Math.abs(y), bce=y<0;
+  if(p===8){ const d=Math.floor(a/10)*10; return bce?[-(d+9),-d]:[d,d+9]; }
+  const span=p===7?100:p===6?1000:Math.pow(10,9-p);
+  const c=Math.max(1,Math.ceil(a/span));
+  return bce?[-(c*span),-((c-1)*span+1)]:[(c-1)*span+1,c*span];
+}
+const yrLo=(y,p)=>{ const i=precInterval(y,p); return i?i[0]:null; };
+const yrHi=(y,p)=>{ const i=precInterval(y,p); return i?i[1]:null; };
 const fmtYP=(y,p)=>{
   if(y==null) return "?";
   y=+y;
@@ -4356,7 +4405,7 @@ function rulerCard(r){
     <div class="ruler-meta">
       <div class="ruler-name">${esc(r.name)}</div>
       ${roleLine}
-      <div class="ruler-reign">${cAbbr(r)}${fmtY(r.start)}${r.end!=null?" – "+cAbbr(r)+fmtY(r.end):""}${r.via?` · ${esc(r.via)}`:""}</div>
+      <div class="ruler-reign">${cAbbr(r)}${fmtYP(r.start,r.sp)}${r.end!=null?" – "+cAbbr(r)+fmtYP(r.end,r.ep):""}${r.unc?" (dates uncertain)":""}${r.via?` · ${esc(r.via)}`:""}</div>
       <a class="pc-link" style="font-size:11px" href="${esc(safeArtUrl(r.art)||wpLink(r.qid))}"${r.qid?` data-wq="${esc(r.qid)}"`:""} target="_blank" rel="noopener">View profile ↗</a>
     </div></div>`;
 }
@@ -4548,7 +4597,7 @@ function buildPanelShell(c,wd,data,year){
     // order, presented in birth order, each with its baked occupation tag.
     for(const pe of draftPeople(data.people).sort((a,b)=>(a.by??9999)-(b.by??9999))){
       const url=safeArtUrl(pe.article)||`https://www.wikidata.org/wiki/${pe.qid}`;
-      const yr=pe.by!=null?`<span class="ev-yr" style="width:auto;margin-right:8px">${fmtY(pe.by)}</span>`:"";
+      const yr=pe.by!=null?`<span class="ev-yr" style="width:auto;margin-right:8px">${fmtYP(pe.by,pe.byp)}</span>`:"";
       const oc=(pe.oc!=null&&OCC_TAB&&OCC_TAB[pe.oc])?OCC_TAB[pe.oc][0]:null;
       const tag=oc?`<span class="pp-tag">${esc(oc)}</span>`:"";
       html+=`<div class="ev"><div class="ev-body"><div class="ev-name">${yr}<a href="${esc(url)}"${pe.qid?` data-wq="${esc(pe.qid)}"`:""} target="_blank" rel="noopener">${esc(pe.name)}</a>${tag}</div></div></div>`;
@@ -4860,7 +4909,7 @@ function renderPeoplePage(c,data){
     const av=esc(monogram(p.name))+(im?`<img src="${esc(im)}" alt="" loading="lazy">`:"");
     const url=safeArtUrl(p.article)||`https://www.wikidata.org/wiki/${p.qid}`;
     const bits=[];
-    if(p.by!=null) bits.push(fmtY(p.by)+(p.dy!=null?" – "+fmtY(p.dy):""));
+    if(p.by!=null) bits.push(fmtYP(p.by,p.byp)+(p.dy!=null?" – "+fmtYP(p.dy,p.dyp):""));
     if(p.oc!=null&&OCC_TAB&&OCC_TAB[p.oc]) bits.push(`<span class="pp-tag" style="margin-left:0">${esc(OCC_TAB[p.oc][0])}</span>`);
     html+=`<div class="ruler" style="margin-top:12px">
       <div class="ruler-av" aria-hidden="true">${av}</div>
