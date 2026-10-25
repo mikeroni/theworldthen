@@ -2272,9 +2272,24 @@ function beatEventFor(data,year){
   for(const bt of data.beats){ if(year>=bt.y&&year<=bt.y+18) b=bt; } // latest active
   return b?data.events.find(e=>e.qid===b.q)||null:null;
 }
+// (223c, B-01) the story caption's event. A reviewed EXPLICIT tour (data.tour, bake HAND_TOUR) captions
+// ONLY from its reviewed stops: before the first stop and after the wrap the caption stays quiet
+// instead of surfacing an unselected event (Palestine's tour opened on Har Brakha and the Temple
+// Institute — increment-B review 10-25). Every other tour keeps active beat → heuristic fallback.
+const explicitTour=d=>!!(d&&d.tour&&d.tour.length);
+function storyEventFor(data,year){
+  if(!data||!data.loaded||data.failed) return null;
+  const b=beatEventFor(data,year);
+  return b||(explicitTour(data)?null:captionEventFor(data.events,year));
+}
+// (223c) reviewed tour-stop notes — Mike's copy (10-25) for a stop whose event row has no baked
+// extract but whose camera needs the one fact said: the 1988 declaration was proclaimed in Algiers,
+// which is where its flight lands. Keyed by the stop's event qid; rendered in the extract's slot.
+const TOUR_NOTE={Q1816561:"Proclaimed in Algiers."};
 const capSentence=t=>{ const i=t.indexOf(". "); return i>0&&i<200?t.slice(0,i+1):t.slice(0,180); };
 function capHtml(ev){
-  const tx=ev.extract?`<span class="cap-tx">${esc(capSentence(ev.extract))}</span>`:"";
+  const note=!ev.extract&&TOUR_NOTE[ev.qid];
+  const tx=ev.extract?`<span class="cap-tx">${esc(capSentence(ev.extract))}</span>`:(note?`<span class="cap-tx">${esc(note)}</span>`:"");
   return `<span class="cap-yr">${fmtYP(ev.year,ev.prec)}</span><b>${esc(ev.name)}</b>${tx}`;
 }
 function renderCaption(year){
@@ -2286,8 +2301,7 @@ function renderCaption(year){
   const capOff=()=>{ capCur=null; capEl.classList.add("off"); capEl.classList.remove("link"); capEl.onclick=null; };
   if(!soloCiv){ if(capCur) capOff(); return; }
   const data=civData(soloCiv);
-  const ok=data&&data.loaded&&!data.failed;
-  const best=(ok&&beatEventFor(data,year))||captionEventFor(ok?data.events:[],year);
+  const best=storyEventFor(data,year); // (223c) explicit tours caption from their reviewed stops only
   if(best){
     if(capCur!==best.qid){
       capCur=best.qid;
@@ -3739,7 +3753,7 @@ function openPanel(c){
   if(panelCiv!==c){
     clearTimeout(surprise._fly);
     speedBtn.classList.remove("dim");
-    if(soloCiv&&soloCiv!==c){ soloCiv=null; showLoopRange(null); tick._beat=null; }
+    if(soloCiv&&soloCiv!==c){ soloCiv=null; showLoopRange(null); tick._beat=null; tick._away=false; }
   }
   const civChanged=panelCiv!==c; // read before the assignment below
   panelCiv=c; panelMode="brief";
@@ -4050,7 +4064,7 @@ function fetchDetails(c){
   // still need a seeded cache entry, or the panel's "Loading…" placeholders sit
   // forever promising a fetch that no longer exists (caught 07-19, major-release 1a)
   if(!c.qid){
-    if(!wdCache.has(dataKey(c))) wdCache.set(dataKey(c),{rulers:[],events:[],people:[],beats:[],context:[],loaded:true,failed:!ENRICH});
+    if(!wdCache.has(dataKey(c))) wdCache.set(dataKey(c),{rulers:[],events:[],people:[],beats:[],context:[],tour:[],loaded:true,failed:!ENRICH});
     if(panelCiv===c) renderPanel();
     return;
   }
@@ -4058,7 +4072,7 @@ function fetchDetails(c){
   if(wdCache.has(key)){ renderPanel(); return; }
   const src=ENRICH&&ENRICH[c.qid];
   if(!src){
-    wdCache.set(key,{rulers:[],events:[],people:[],beats:[],context:[],loaded:true,failed:!ENRICH});
+    wdCache.set(key,{rulers:[],events:[],people:[],beats:[],context:[],tour:[],loaded:true,failed:!ENRICH});
     if(panelCiv===c){ renderPanel(); draw(+scrub.value); }
     return;
   }
@@ -4137,7 +4151,11 @@ function fetchDetails(c){
   // (222) reviewed context stops (bake HAND_CONTEXT): NOT era-sliced — they are the history
   // the chapter window cannot show, read without moving the clock (plan item 20)
   const context=src.context||[];
-  wdCache.set(key,{rulers,events,people,beats,context,loaded:true});
+  // (223c) a reviewed EXPLICIT story tour (bake HAND_TOUR) rides along verbatim. Its presence is the
+  // switch for the explicit-tour rules: the story caption comes ONLY from its stops (B-01), each stop
+  // is paced for reading time (B-02) and a coordless stop brings the camera home (camera option A)
+  const tour=src.tour||[];
+  wdCache.set(key,{rulers,events,people,beats,context,tour,loaded:true});
   if(panelCiv===c){ renderPanel(); draw(+scrub.value); } // draw: surface event markers even while paused
 }
 
@@ -4790,7 +4808,7 @@ function updatePanelYear(c,data,year){
   if(capW){
     let ch="";
     if(smallUI()&&soloCiv===c&&data.loaded&&!data.failed){
-      const b=beatEventFor(data,year)||captionEventFor(data.events,year);
+      const b=storyEventFor(data,year); // (223c) the same rule as the floating caption
       // an <a> so the panel's link delegation opens articles in the reader (Mike 07-19)
       if(b) ch=`<a class="pc-cap" href="${esc(evLink(b))}"${evAttrs(b)} target="_blank" rel="noopener">${capHtml(b)}<span class="cap-more">read more →</span></a>`;
     }
@@ -5291,6 +5309,7 @@ let playPos=0; // float playback position — the slider's step=0.1 would otherw
 // key events (~2s each). Plain timeline play-through is never slowed; a manual speed
 // change during solo (= the user taking the wheel) turns pacing off for that session.
 // The baked story tours (BAKE item 5) inherit this renderer.
+const TOUR_READ_S=2; // (223c, B-02) seconds each explicit-tour stop is presented at 1×
 function soloDwellAt(year){
   const c=soloCiv; if(!c||c._noDwell) return null;
   const data=civData(c);
@@ -5303,7 +5322,15 @@ function soloDwellAt(year){
     if(data&&data.beats&&data.beats.length){
       // baked story beats (BAKE item 5) are the tour's dwell plan when present —
       // era-spaced at bake time so a 2,000-year history still flows
-      data.beats.forEach(b=>win.push({from:b.y,until:b.y+5,yps:2.5}));
+      if(explicitTour(data)){
+        // (223c, B-02) a reviewed explicit tour paces each stop for READING TIME. The window runs
+        // from the stop to the EARLIER of the usual +5 years or the next stop (never across a long
+        // gap — 1993→2012 is nineteen years), and its pace is set so the window plays in
+        // TOUR_READ_S seconds at 1×: 2012→2014 is two years at 1 yr/s (it was 0.8 s at 2.5),
+        // floor 0.5 yr/s. Manual speed (_noDwell), seeking, pause and reduced motion are untouched.
+        data.beats.forEach((b,i)=>{ const nx=data.beats[i+1], until=nx?Math.min(b.y+5,nx.y):b.y+5;
+          win.push({from:b.y,until,yps:Math.max(0.5,(until-b.y)/TOUR_READ_S)}); });
+      } else data.beats.forEach(b=>win.push({from:b.y,until:b.y+5,yps:2.5}));
     } else if(evN){
       const imp=data.events.filter(e=>e.important&&e.year!=null)
         .sort((a,b)=>(b.sitelinks||0)-(a.sitelinks||0));
@@ -5331,7 +5358,13 @@ function tick(ts){
     const bq=be?be.qid:null;
     if(bq!==tick._beat){
       tick._beat=bq;
-      if(be&&be.coord&&!soloCiv._noCam) beatCam(soloCiv,be.coord);
+      if(be&&be.coord&&!soloCiv._noCam){ beatCam(soloCiv,be.coord); if(!REDUCED) tick._away=true; }
+      // (223c, camera option A) under a reviewed EXPLICIT tour, a stop WITHOUT a coordinate opens by
+      // bringing the camera back from the previous stop's place to the polity's whole-life frame —
+      // once, as that stop begins (not continuously); never under reduced motion, never after the
+      // user took the wheel (_noCam), and not again while the camera is already home (_away). A
+      // contextual frame asserts no location: no marker, nothing invented (Mike 10-25)
+      else if(be&&!be.coord&&tick._away&&explicitTour(data)&&!soloCiv._noCam&&!REDUCED){ flyToCiv(soloCiv); tick._away=false; }
     }
   }
   const unitsPerSec = yps * UNITS_PER_YEAR;
@@ -5339,7 +5372,7 @@ function tick(ts){
   let v=playPos;
   if(soloCiv){
     const lo=tAt(Math.max(YEAR_MIN,soloCiv.born-40)), hi=tAt(Math.min(YEAR_MAX,soloCiv.die+40));
-    if(v>=hi){ v=playPos=lo; tick._beat=null; // loop back to start
+    if(v>=hi){ v=playPos=lo; tick._beat=null; tick._away=false; // loop back to start
       if(!soloCiv._noCam&&!REDUCED) flyToCiv(soloCiv); } // tour restarts: re-frame the whole life
     // (208) the tick is the hot path: skip the scene when the integer year is
     // unchanged (draw still updates the transport chrome every frame)
@@ -5377,7 +5410,7 @@ function toggleSolo(){
   if(soloCiv===panelCiv){ exitSolo(); return; }
   soloCiv=panelCiv;
   soloCiv._noDwell=false; // fresh watch = fresh story pacing
-  soloCiv._noCam=false; tick._beat=null; // …and a fresh tour camera
+  soloCiv._noCam=false; tick._beat=null; tick._away=false; // …and a fresh tour camera
   speedBtn.classList.remove("dim"); // a stale dwell dim must not outlive the story start
   stop();
   playPos=tAt(Math.max(YEAR_MIN,soloCiv.born-40));
@@ -5390,7 +5423,7 @@ function toggleSolo(){
   play();
   renderPanel();
 }
-function exitSolo(){ soloCiv=null; stop(); showLoopRange(null); tick._beat=null; speedBtn.classList.remove("dim");
+function exitSolo(){ soloCiv=null; stop(); showLoopRange(null); tick._beat=null; tick._away=false; speedBtn.classList.remove("dim");
   flyHome(); draw(+scrub.value); if(panelCiv)renderPanel(); }
 window.toggleSolo=toggleSolo;
 // solo jump buttons: START replays the story (keeps rolling); END parks ON the end cap —
