@@ -2,8 +2,8 @@
 <!-- The World Then — Copyright (c) 2026 Michael Manning (The World Then).
      Code: The World Then Noncommercial ShareAlike License 1.0 · Content: CC BY-NC-SA 4.0
      · third-party data and libraries keep their own licenses · full terms:
-     https://theworldthen.com/LICENSE.md · this build is release 221; its source:
-     https://github.com/mikeroni/theworldthen/tree/release-221/source -->
+     https://theworldthen.com/LICENSE.md · this build is release 222; its source:
+     https://github.com/mikeroni/theworldthen/tree/release-222/source -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -242,6 +242,14 @@
     .lin-row:not(.open) .lin-xtra{display:none}
     .lin-row:not(.open) .lin-more{display:inline-block}
   }
+  /* (222) context stops (Earlier / Related Palestinian history): event-row anatomy with a
+     free-width period, a relationship word and a caption readable without the reader */
+  .ctx-intro{font-size:11.5px;line-height:1.55;color:var(--ink-dim);margin:0 0 4px}
+  .ctx-yr{width:auto;min-width:54px;margin-right:4px}
+  .ctx-rel{display:inline-block;margin-left:8px;font-size:10px;color:var(--ink-faint);font-style:italic}
+  .ctx-cap{font-size:11.5px;line-height:1.5;color:var(--ink-dim);margin-top:3px}
+  .ctx-related a{color:inherit;border-bottom:1px solid var(--line);text-decoration:none}
+  .ctx-related a:hover{border-bottom-color:var(--cyan)}
   .pc-src{margin-top:22px;font-size:10px;color:var(--ink-faint);letter-spacing:.3px;
     border-top:1px solid var(--line);padding-top:12px}
   /* full-timeline mode: a back button + vertical rail */
@@ -932,7 +940,7 @@
          comment: the standalone travels alone and the online About page will name a
          later release after the next deploy, so this link is pinned to THIS build's
          release tag (the tag's root shows LICENSE.md + source/). -->
-    <a class="about-link src" href="https://github.com/mikeroni/theworldthen/tree/release-221" target="_blank" rel="noopener" title="License and source code for release 221">source</a>
+    <a class="about-link src" href="https://github.com/mikeroni/theworldthen/tree/release-222" target="_blank" rel="noopener" title="License and source code for release 222">source</a>
   </header>
   <div id="stage">
     <canvas id="stars"></canvas>
@@ -1152,7 +1160,7 @@ async function bootData(){
       fetch("data/civs-app.json?v=718e83a9").then(r=>{if(!r.ok)throw new Error("civs-app.json "+r.status);return r.json();}),
       Promise.race([HYDRO_PENDING, new Promise(res=>setTimeout(res,2500,null))])
     ]);
-    ENRICH_PENDING=fetch("data/enrichment.json?v=b3df2ec9").then(r=>r.ok?r.json():null).catch(()=>null);
+    ENRICH_PENDING=fetch("data/enrichment.json?v=c771a494").then(r=>r.ok?r.json():null).catch(()=>null);
     TOPO=topo; TL=tl; HYDRO=hy;
     bootApp();
   }catch(err){
@@ -4043,7 +4051,7 @@ function fetchDetails(c){
   // still need a seeded cache entry, or the panel's "Loading…" placeholders sit
   // forever promising a fetch that no longer exists (caught 07-19, major-release 1a)
   if(!c.qid){
-    if(!wdCache.has(dataKey(c))) wdCache.set(dataKey(c),{rulers:[],events:[],people:[],beats:[],loaded:true,failed:!ENRICH});
+    if(!wdCache.has(dataKey(c))) wdCache.set(dataKey(c),{rulers:[],events:[],people:[],beats:[],context:[],loaded:true,failed:!ENRICH});
     if(panelCiv===c) renderPanel();
     return;
   }
@@ -4051,7 +4059,7 @@ function fetchDetails(c){
   if(wdCache.has(key)){ renderPanel(); return; }
   const src=ENRICH&&ENRICH[c.qid];
   if(!src){
-    wdCache.set(key,{rulers:[],events:[],people:[],beats:[],loaded:true,failed:!ENRICH});
+    wdCache.set(key,{rulers:[],events:[],people:[],beats:[],context:[],loaded:true,failed:!ENRICH});
     if(panelCiv===c){ renderPanel(); draw(+scrub.value); }
     return;
   }
@@ -4127,7 +4135,10 @@ function fetchDetails(c){
   // both come from the event)
   const beats=(src.beats||[]).filter(b=> !isSeg || (b.y>=lo&&b.y<=hi))
     .filter(b=>events.some(e=>e.qid===b.q));
-  wdCache.set(key,{rulers,events,people,beats,loaded:true});
+  // (222) reviewed context stops (bake HAND_CONTEXT): NOT era-sliced — they are the history
+  // the chapter window cannot show, read without moving the clock (plan item 20)
+  const context=src.context||[];
+  wdCache.set(key,{rulers,events,people,beats,context,loaded:true});
   if(panelCiv===c){ renderPanel(); draw(+scrub.value); } // draw: surface event markers even while paused
 }
 
@@ -4533,6 +4544,46 @@ function linRows(c,year){
   return h?`<div class="pc-lineage">${h}</div>`:"";
 }
 
+// (222) EARLIER / RELATED PALESTINIAN HISTORY — plan item 20 (external review 2026-10-24,
+// Mike's go). A labelled CONTEXT section, not a lineage chip: the Before/After chips promise
+// "one step back / what follows on this ground", which 1920→1988 is not. Each stop is a
+// reviewed row baked from tools/bake/hand-attach.mjs HAND_CONTEXT (heading, context period,
+// relationship word, caption, receipt) pointing at an article that already ships under its
+// carrier polity; the link opens the SAME reader as every event row (identity guard, ‹ Back,
+// Escape, focus return) and never moves the clock or the camera. The carrier row's baked
+// extract is read at render time so no prose ships twice; a stop with no extract still
+// shows its caption here (offline-safe) and the reader falls back to its online summary.
+// The one navigating control is the explicit, separately labelled chapter button (linJump).
+// Section heading / intro / bridge copy lives here as UI copy (Mike's voice final; the
+// intro is the reviewer's proposed paragraph, the bridge states administration and
+// control after 1948 — UNCTAD / UNEF — never sovereignty).
+const CTX_COPY={
+  Q219060:{head:"Earlier Palestinian history",
+    intro:"Palestinian history predates the declaration of the State of Palestine in 1988. These readings follow Palestinian life and events from 1911 to 1967, across Ottoman rule, the British Mandate and the years after 1948. They provide historical background without extending the modern state's dates on the map.",
+    bridge:"From 1948 to 1967, Jordan administered the West Bank and Egypt administered the Gaza Strip, apart from Israel's occupation of Gaza in 1956–57. Israel occupied both territories in 1967.",
+    jump:{name:"Mandatory Palestine",year:1920,label:"View the Mandate chapter (1920–1948)"}},
+  Q193714:{head:"Related Palestinian history",
+    intro:"The Mandate ended in 1948, but Palestinian history continued. These readings cover refugee communities, attacks and changes of control between 1948 and 1967.",
+    bridge:"From 1948 to 1967, Jordan administered the West Bank and Egypt administered the Gaza Strip, apart from Israel's occupation of Gaza in 1956–57. Israel occupied both territories in 1967.",
+    jump:{name:"Palestine",year:2024,label:"View the Palestine chapter (mapped from 2024)"}}
+};
+function ctxSection(c,data){
+  const cp=CTX_COPY[c.qid], rows=(data&&data.context)||[];
+  if(!cp||!rows.length) return "";
+  const carRow=(r,q)=>{ const car=ENRICH&&ENRICH[r.carrier]; return car?(car.events||[]).find(e=>e.qid===q):null; };
+  // the reader card's title is the ARTICLE's name (the carrier row), not the authored heading
+  const link=(url,q,ce,label)=>`<a href="${esc(url)}" data-wq="${esc(q)}"${ce&&ce.extract?` data-ex="${esc(ce.extract)}" data-et="${esc(ce.name)}"`:""}${ce&&ce.xr?` data-xr="1"`:""} target="_blank" rel="noopener">${esc(label)}</a>`;
+  let h=`<div class="pc-sec" id="pcCtxSec"><div class="pc-sec-h">${esc(cp.head)}</div><p class="ctx-intro">${esc(cp.intro)}</p>`;
+  for(const r of rows){
+    const ce=carRow(r,r.qid);
+    h+=`<div class="ev ctx"><span class="ev-yr ctx-yr">${esc(r.period)}</span><div class="ev-body"><div class="ev-name">${link(r.article,r.qid,ce,r.name)}<span class="ctx-rel">${esc(r.rel)}</span></div><div class="ctx-cap">${esc(r.caption)}${r.related?` <span class="ctx-related">Related reading: ${link(r.related.article,r.related.qid,carRow(r,r.related.qid),r.related.name)}</span>`:""}</div></div></div>`;
+  }
+  h+=`<div class="pc-note">${esc(cp.bridge)}</div>`;
+  if(cp.jump&&civByName.get(cp.jump.name))
+    h+=`<button class="pc-btn ctx-jump" data-n="${esc(cp.jump.name)}" data-y="${cp.jump.year}" aria-label="${esc(cp.jump.label)} — moves the map to ${fmtY(cp.jump.year)}">${esc(cp.jump.label)} →</button>`;
+  return h+`</div>`;
+}
+
 function buildPanelShell(c,wd,data,year){
   // baked Wikipedia lead (2-3 sentences of real prose) beats the one-line
   // Wikidata disambiguator; the tooltip keeps the short line. EXCEPT on a
@@ -4623,6 +4674,7 @@ function buildPanelShell(c,wd,data,year){
     html+=`<div class="pc-empty">${data.failed?"Events are unavailable because the app's data files didn't load.":"No events recorded in our sources for this polity — written records here are sparse, not the history itself."}</div>`;
   }
   html+=`</div>`;
+  html+=ctxSection(c,data); // (222) reviewed context stops — only polities with HAND_CONTEXT rows render it
   // notable people — shown for every polity (figures of states, peoples, cultures alike)
   if(data.people && data.people.length){
     html+=`<div class="pc-sec"><div class="pc-sec-h">Notable people</div>`;
@@ -4845,6 +4897,9 @@ panelScroll.addEventListener("click",(e)=>{
     return; }
   const ch=e.target.closest(".lin-chip");
   if(ch) linJump(ch.dataset.n,+ch.dataset.y);
+  // (222) the context section's one navigating control — explicit, labelled, same machinery
+  const cj=e.target.closest(".ctx-jump");
+  if(cj) linJump(cj.dataset.n,+cj.dataset.y);
 });
 
 function showFullTimeline(){ panelMode="full"; tlDomFilter=null; panel.classList.add("wide");
