@@ -7100,10 +7100,27 @@ document.addEventListener("pointerdown",(e)=>{
 // skip (chrome still follows the finger). No separate flush-on-release is
 // needed: a release fires no event the pending rAF hasn't already covered.
 let scrubRaf=0;
+// (224) how far each endpoint magnet reaches, in track units: the classic 6 (≈ 24 years),
+// capped at an EIGHTH of the loop per side, and stopped short of the band that shows the
+// story's first / last beat year INSIDE the loop, so a stop can always be reached by hand
+// (beats outside the loop never play — France carries some at −23000). Two fixed 6-unit
+// magnets had covered Palestine's whole 42-year loop (10.4 units): every drag landed on
+// 1984 or 2026 (review 10-25). Beats arrive asynchronously — until then only the loop cap
+// applies.
+function magnetReach(c,lo,hi){
+  const cap=Math.min(6,(hi-lo)/8);
+  const d=civData(c); const bs=d&&d.loaded&&!d.failed&&d.beats&&d.beats.length?d.beats:null;
+  if(!bs) return {lo:cap,hi:cap};
+  const yl=yearAt(lo), yh=yearAt(hi); let y0=Infinity,y1=-Infinity;
+  for(const b of bs){ if(b.y<=yl||b.y>=yh) continue; if(b.y<y0) y0=b.y; if(b.y>y1) y1=b.y; }
+  if(y0===Infinity) return {lo:cap,hi:cap};
+  return {lo:Math.max(0,Math.min(cap,tAt(y0-0.5)-lo)), hi:Math.max(0,Math.min(cap,hi-tAt(y1+0.5)))};
+}
 scrub.addEventListener("input",()=>{ let v=+scrub.value;
-  if(soloCiv){ // gentle magnetism on the story's endpoints (6 track units ≈ 24 years)
+  if(soloCiv){ // gentle magnetism on the story's endpoints — bounded, see magnetReach (224)
     const lo=tAt(Math.max(YEAR_MIN,soloCiv.born-40)), hi=tAt(Math.min(YEAR_MAX,soloCiv.die+40));
-    if(Math.abs(v-lo)<6) v=lo; else if(Math.abs(v-hi)<6) v=hi;
+    const m=magnetReach(soloCiv,lo,hi);
+    if(Math.abs(v-lo)<m.lo) v=lo; else if(Math.abs(v-hi)<m.hi) v=hi;
     scrub.value=v;
   }
   playPos=v; warm.holdoff=performance.now(); // builds yield while the finger moves
