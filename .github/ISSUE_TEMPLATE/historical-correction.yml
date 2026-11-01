@@ -1,0 +1,51 @@
+name: Historical correction
+description: A border, date, name or claim on the map that you believe is wrong, uncertain, missing or disputed.
+title: "Correction: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. A correction with a source is the most useful kind. For a security vulnerability, use the [private reporting form](https://github.com/mikeroni/theworldthen/security/advisories/new), not a public issue.
+  - type: input
+    id: subject
+    attributes:
+      label: Polity or place, and year
+      placeholder: "Kingdom of Kongo, 1550"
+    validations:
+      required: true
+  - type: input
+    id: link
+    attributes:
+      label: Map link
+      description: If you can, copy the address bar with the map at that year and place (it carries the year and the selected polity).
+      placeholder: "https://theworldthen.com/#1550/Kingdom%20of%20Kongo"
+  - type: textarea
+    id: claim
+    attributes:
+      label: What the map shows, or leaves out
+      description: The exact displayed claim, label, border or missing information.
+    validations:
+      required: true
+  - type: textarea
+    id: correction
+    attributes:
+      label: Proposed correction and source
+      description: What it should say or show, and a supporting source, preferably with a page or section reference.
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of concern
+      options:
+        - Factual error
+        - Uncertainty
+        - Missing coverage
+        - Disputed interpretation
+    validations:
+      required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot (optional)
+      description: Drag an image into this box if it helps.

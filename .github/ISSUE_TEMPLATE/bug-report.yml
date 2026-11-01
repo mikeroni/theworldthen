@@ -1,0 +1,43 @@
+name: Bug report
+description: Something on the site does not work as expected.
+title: "Bug: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For a security vulnerability, use the [private reporting form](https://github.com/mikeroni/theworldthen/security/advisories/new), not a public issue. For a wrong border, date or name, use the Historical correction form.
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Open the map at ...\n2. Press ...\n3. ..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+    validations:
+      required: true
+  - type: input
+    id: link
+    attributes:
+      label: Map link or year
+      description: Copy the address bar if the problem depends on a year or a selected polity.
+      placeholder: "https://theworldthen.com/#1550/Kingdom%20of%20Kongo"
+  - type: input
+    id: device
+    attributes:
+      label: Browser and device
+      placeholder: "Safari 26 on iPhone 15, or Firefox 148 on Windows 11"
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot (optional)
+      description: Drag an image into this box if it helps.

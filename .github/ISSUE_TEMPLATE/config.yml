@@ -1,0 +1,8 @@
+# Issue chooser for The World Then ((227), 2026-11-01). Blank issues stay available
+# for anything the two forms do not fit. Security reports go through the private
+# form linked below, never through a public issue (see SECURITY.md).
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability (private)
+    url: https://github.com/mikeroni/theworldthen/security/advisories/new
+    about: Suspected vulnerabilities go through GitHub's private reporting form, not a public issue. See SECURITY.md.

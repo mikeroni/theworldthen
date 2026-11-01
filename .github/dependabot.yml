@@ -1,0 +1,13 @@
+# Dependabot for The World Then ((227), 2026-11-01): monthly proposals for the
+# pinned GitHub Actions in .github/workflows/codeql.yml, at most two open at once.
+# Nothing else is monitored here: the site installs no npm or pip packages; its
+# three vendored libraries are reviewed by hand (see about.html, "Libraries").
+# A proposal is applied through the private bundle and the next release, never
+# merged into the public output alone.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 2

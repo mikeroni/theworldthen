@@ -1,0 +1,54 @@
+# CodeQL code scanning for The World Then, advanced setup ((227), 2026-11-01).
+#
+# Why a workflow file: GitHub's default setup picks languages with linguist, which
+# sees this repository as HTML + Python and offers Python only. The application is
+# the JavaScript inside source/app.html; CodeQL's JavaScript extractor reads .html
+# files, but only when javascript-typescript is requested, which this file does.
+# Default setup must be DISABLED before this workflow first runs: CodeQL rejects
+# uploads from advanced configurations while default setup is enabled.
+#
+# Scope: source/ only, the published corresponding source (app.html, about.html,
+# build.py). The built pages and vendor/ duplicate or vendor that code and are left
+# out so a finding is reported once. This workflow fetches no history data,
+# deploys nothing and requires no custom secrets or long-lived credentials: it
+# uses only the job token, and the checkout does not persist it. Actions are
+# pinned to reviewed full-length commits; Dependabot proposes updates monthly
+# (.github/dependabot.yml).
+name: CodeQL
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "17 6 * * 1"
+permissions: {}
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript, python]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          config: |
+            paths:
+              - source
+      - name: Analyze
+        uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
+        with:
+          category: "/language:${{ matrix.language }}"
