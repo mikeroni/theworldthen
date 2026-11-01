@@ -2,8 +2,8 @@
 <!-- The World Then — Copyright (c) 2026 Michael Manning (The World Then).
      Code: The World Then Noncommercial ShareAlike License 1.0 · Content: CC BY-NC-SA 4.0
      · third-party data and libraries keep their own licenses · full terms:
-     https://theworldthen.com/LICENSE.md · this build is release 224; its source:
-     https://github.com/mikeroni/theworldthen/tree/release-224/source -->
+     https://theworldthen.com/LICENSE.md · this build is release 225; its source:
+     https://github.com/mikeroni/theworldthen/tree/release-225/source -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -940,7 +940,7 @@
          comment: the standalone travels alone and the online About page will name a
          later release after the next deploy, so this link is pinned to THIS build's
          release tag (the tag's root shows LICENSE.md + source/). -->
-    <a class="about-link src" href="https://github.com/mikeroni/theworldthen/tree/release-224" target="_blank" rel="noopener" title="License and source code for release 224">source</a>
+    <a class="about-link src" href="https://github.com/mikeroni/theworldthen/tree/release-225" target="_blank" rel="noopener" title="License and source code for release 225">source</a>
   </header>
   <div id="stage">
     <canvas id="stars"></canvas>
@@ -1160,7 +1160,7 @@ async function bootData(){
       fetch("data/civs-app.json?v=718e83a9").then(r=>{if(!r.ok)throw new Error("civs-app.json "+r.status);return r.json();}),
       Promise.race([HYDRO_PENDING, new Promise(res=>setTimeout(res,2500,null))])
     ]);
-    ENRICH_PENDING=fetch("data/enrichment.json?v=1711c752").then(r=>r.ok?r.json():null).catch(()=>null);
+    ENRICH_PENDING=fetch("data/enrichment.json?v=7472d339").then(r=>r.ok?r.json():null).catch(()=>null);
     TOPO=topo; TL=tl; HYDRO=hy;
     bootApp();
   }catch(err){
@@ -2283,14 +2283,31 @@ function storyEventFor(data,year){
   const b=beatEventFor(data,year);
   return b||(explicitTour(data)?null:captionEventFor(data.events,year));
 }
-// (223c) reviewed tour-stop notes — Mike's copy (10-25) for a stop whose event row has no baked
-// extract but whose camera needs the one fact said: the 1988 declaration was proclaimed in Algiers,
-// which is where its flight lands. Keyed by the stop's event qid; rendered in the extract's slot.
+// (223c) reviewed tour-stop notes — Mike's copy (10-25) for a stop whose camera needs the one fact
+// said: the 1988 declaration was proclaimed in Algiers, which is where its flight lands. Keyed by the
+// stop's event qid; rendered in the extract's slot. (225) the row now carries a baked extract (the
+// tour-row extracts fetched 10-31): the REVIEWED note takes precedence over the summary's generic
+// first sentence — reviewed copy is never displaced by a fetch; stops without a note show the extract.
 const TOUR_NOTE={Q1816561:"Proclaimed in Algiers."};
-const capSentence=t=>{ const i=t.indexOf(". "); return i>0&&i<200?t.slice(0,i+1):t.slice(0,180); };
+// (225c R225-02) the caption shows the summary's FIRST SENTENCE when it is short enough (≤ 200 chars);
+// otherwise it is cut at a WORD BOUNDARY at or before 180 chars with an ellipsis — never through a
+// date or any other token (the 180-char hard cut had shipped "…an attempt in 199" and "…a Palest").
+// Abbreviations and initials (U.S., J. R.) are not sentence ends; a trailing article/preposition is
+// dropped before the ellipsis; the ellipsis appears only when something was omitted; a single
+// unbroken token longer than the cap is the one hard-cut fallback. The reader keeps the full text.
+const CAP_ABBR=/(?:^|\s)(?:[A-Z]|[A-Z]\.[A-Z]|Mr|Mrs|Ms|Dr|St|Jr|Sr|No|Nos|vs|etc|ca|c|approx|Gen|Col|Lt|Capt|Sgt|Prof|Rev|Hon|Mt|Ft|Co|Inc|Ltd)\.?$/;
+const CAP_TAIL=/\s+(?:a|an|the|of|in|on|at|to|by|for|and|or|but|nor|with|from|as|into|its|his|her|their|that|which|who)$/i;
+function capSentence(t){
+  // (225d) end of input is a sentence boundary too: a complete single-sentence summary of 181–200 chars ships whole (Vézeronce, Q966386)
+  const re=/[.!?]["”’)]?(?=\s+[A-Z0-9“"(]|$)/g; let m;
+  while((m=re.exec(t))){ const end=m.index+m[0].length; if(end>200) break; if(CAP_ABBR.test(t.slice(0,m.index))) continue; return t.slice(0,end); }
+  if(t.length<=180) return t;
+  const k=t.lastIndexOf(" ",180), cut=k>=60?k:180;
+  return t.slice(0,cut).replace(CAP_TAIL,"").replace(/[\s,;:([\-–—]+$/,"")+"…";
+}
 function capHtml(ev){
-  const note=!ev.extract&&TOUR_NOTE[ev.qid];
-  const tx=ev.extract?`<span class="cap-tx">${esc(capSentence(ev.extract))}</span>`:(note?`<span class="cap-tx">${esc(note)}</span>`:"");
+  const note=TOUR_NOTE[ev.qid];
+  const tx=note?`<span class="cap-tx">${esc(note)}</span>`:(ev.extract?`<span class="cap-tx">${esc(capSentence(ev.extract))}</span>`:"");
   return `<span class="cap-yr">${fmtYP(ev.year,ev.prec)}</span><b>${esc(ev.name)}</b>${tx}`;
 }
 function renderCaption(year){
@@ -4762,7 +4779,7 @@ function updatePanelYear(c,data,year){
     // too: curated chapter dates + the parent story, same grammar as the tooltip
     const sp=preBorn?null:eraSpanOf(c,year);
     $("pcSub").innerHTML = (preBorn
-      ? `<div class="pc-eyebrow" style="color:var(--ink-faint);margin-top:2px">doesn't exist yet — appears on this map in ${fmtY(dispDates(c)[0])}</div>`
+      ? `<div class="pc-eyebrow" style="color:var(--ink-faint);margin-top:2px">not mapped yet — appears on this map in ${fmtY(dispDates(c)[0])}</div>`
       : (eraName!==c.name&&eraName!==lineage)
       ? `<div class="pc-eyebrow" style="color:var(--ink-faint);margin-top:2px">${sp?`${sp} · `:""}part of ${esc(lineage)}</div>` : "")+endo;
   }
