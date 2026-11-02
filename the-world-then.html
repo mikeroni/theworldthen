@@ -2,8 +2,8 @@
 <!-- The World Then — Copyright (c) 2026 Michael Manning (The World Then).
      Code: The World Then Noncommercial ShareAlike License 1.0 · Content: CC BY-NC-SA 4.0
      · third-party data and libraries keep their own licenses · full terms:
-     https://theworldthen.com/LICENSE.md · this build is release 228; its source:
-     https://github.com/mikeroni/theworldthen/tree/release-228/source -->
+     https://theworldthen.com/LICENSE.md · this build is release 229; its source:
+     https://github.com/mikeroni/theworldthen/tree/release-229/source -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -944,7 +944,7 @@
          comment: the standalone travels alone and the online About page will name a
          later release after the next deploy, so this link is pinned to THIS build's
          release tag (the tag's root shows LICENSE.md + source/). -->
-    <a class="about-link src" href="https://github.com/mikeroni/theworldthen/tree/release-228" target="_blank" rel="noopener" title="License and source code for release 228">source</a>
+    <a class="about-link src" href="https://github.com/mikeroni/theworldthen/tree/release-229" target="_blank" rel="noopener" title="License and source code for release 229">source</a>
   </header>
   <div id="stage">
     <canvas id="stars"></canvas>
@@ -4270,13 +4270,24 @@ const coarseYr=p=>p!=null&&p<9; // chip helper: coarse text needs width:auto
 // data gap, disclosed by the footnote) but may never SHRINK visible coverage by more
 // than 25yr: a composite like Tokugawa→Empire-of-Japan is on the map until 1938, and
 // headlining Wikidata's 1867 dissolution would contradict what the user is looking at.
-function dispDates(c){
+// (229) THE ADOPTED PAIR, before the ordering guard. Each endpoint is adopted on its own test, so a
+// SHORT mapped span (under 50 years) can adopt a founding that lands after its own end: Funj's first
+// chapter is mapped 1492–1500, its recorded founding is 1505 (Wikidata, via the enrichment fallback)
+// and its recorded end, 1821, is too far from 1500 to adopt — the pair came out "1505 CE – 1500 CE",
+// the only reversed pair at the 228 data (every record run through the app's own chain). A headline's
+// start is no later than its end (equal years are a valid span at year precision, (229b)): dispDates
+// falls back to the mapped span when the adopted pair runs backwards, and mapSpanNote says why.
+function adoptedDates(c){
   const wd=c._wd||{};
   const b=(wd.inception!=null&&Math.abs(wd.inception-c.born)<=150
     &&wd.inception<=c.born+25)?wd.inception:c.born;
   const d=(wd.dissolved!=null&&Math.abs(wd.dissolved-c.die)<=150
     &&wd.dissolved>=c.die-25)?wd.dissolved:c.die;
   return [b,d];
+}
+const datesConflict=c=>{ const [b,d]=adoptedDates(c); return !(b<=d)&&c.born<=c.die; }; // (229/229b) the adopted pair runs backwards (start after end) while the mapped span does not; equal years are a valid span at year precision
+function dispDates(c){
+  return datesConflict(c)?[c.born,c.die]:adoptedDates(c);
 }
 function dispSpan(c){ const [b,d]=dispDates(c); return (fmtY(b)+" – "+(c.aliveNow?"present":fmtY(d))).replace(/ /g,"\u00A0"); }
 // (228) THE PANEL'S MAP START. civAt paints a record at FULL alpha from min(born, first frame),
@@ -4289,7 +4300,8 @@ function dispSpan(c){ const [b,d]=dispDates(c); return (fmtY(b)+" – "+(c.alive
 // carries one: Palestine). SCOPE (228b, reviewer): this fixes FALSE pre-born warnings over full
 // paint; it is not a universal "the map is unpainted" test — an adopted headline EARLIER than the
 // first paint is kept as before (the min), and the fade shoulder before the start stays pre-born
-// as (169 H3) intended. 58 records at the 227 data (the enrichment-inception fallback counts Funj).
+// as (169 H3) intended. 57 records at the 228 data ((229): Funj's first chapter, which the enrichment-inception
+// fallback had put in the class, left it when the ordering guard sent its reversed pair back to the mapped span).
 function mapStartOf(c){
   if(c.pb!=null) return c.pb;
   return Math.min(dispDates(c)[0], c.born, c.frames[0][0]);
@@ -4325,6 +4337,15 @@ const srcHorizonEnd=c=>{ const wd=c._wd||{};
     && c.die===c.frames[c.frames.length-1][0] && fadeOutOf(c)===FADE; };
 function mapSpanNote(c){
   const [b,d]=dispDates(c);
+  // (229) the adopted pair ran backwards (datesConflict: Funj's first chapter, mapped 1492–1500 against a
+  // recorded 1505–1821), so the headline shows the MAPPED span; this line gives the recorded bounds in the established
+  // (163)/(206) wording and returns early — `adopted` is false here by construction, and the segment branch below would
+  // otherwise keep quiet (a sibling chapter maps 1783–1821, but nothing else says the recorded founding postdates this
+  // chapter's whole span). The card's popover for this line is conflictWhy.
+  if(datesConflict(c)){ const wd=c._wd||{};
+    const hist=wd.inception!=null&&wd.dissolved!=null?`historically ${fmtY(wd.inception)} – ${fmtY(wd.dissolved)}`
+      :wd.inception!=null?`historically from ${fmtY(wd.inception)}`:`historically until ${fmtY(wd.dissolved)}`;
+    return `${hist}; mapped ${fmtY(c.born)} – ${fmtY(c.die)}`; }
   // (206) V205-1: the map-coverage clause used to be an EARLY RETURN, so a record
   // that adopted ONE endpoint (start 50yr off, say) never reached the historical-
   // endpoint disclosures below and its far OTHER endpoint went unsaid — the
@@ -4719,10 +4740,14 @@ function buildPanelShell(c,wd,data,year){
       // the recorded end is …") leads with the map-span clause, and the overrun
       // explainer is still the truthful popover for it. The phrase appears in
       // both the full and the trimmed ee clause and in nothing else.
-      const sh=srcHorizonEnd(c), ovr=/the recorded end is /.test(n);
-      const id=sh?"srcEndWhy":ovr?"overrunWhy":"mapspanWhy";
-      const lab=sh?"Why does the map stop here?":ovr?"Why does the map run past that?":"Why do these dates differ?";
-      const why=sh
+      // (229) cfl is tested FIRST: the conflict line is mapSpanNote's early return, and a conflicting record
+      // with no recorded end could also satisfy srcHorizonEnd — the line on the card decides the popover.
+      const sh=srcHorizonEnd(c), ovr=/the recorded end is /.test(n), cfl=datesConflict(c);
+      const id=cfl?"conflictWhy":sh?"srcEndWhy":ovr?"overrunWhy":"mapspanWhy";
+      const lab=cfl?"Why do these dates differ?":sh?"Why does the map stop here?":ovr?"Why does the map run past that?":"Why do these dates differ?";
+      const why=cfl
+        ?"The recorded dates conflict with this chapter's mapped years. Both are shown here, with the mapped period in the headline. The mismatch has not yet been resolved."
+        :sh
         ?"This is the last year our border source draws this polity. No end date is recorded in our sources, so the map stops where the data does. The outline fades over the following century — and where no later polity claims this ground, a faint trace stays until one does. The fade marks the limit of the data, not a claim that anyone disappeared."
         :ovr
         ?"Our border source keeps drawing this polity after the year its end is recorded. Historical maps are drawn at intervals and a label often outlives the state it names, so the shape you see in the later years is the source's, not a claim that the polity was still governing."
@@ -4821,7 +4846,7 @@ function updatePanelYear(c,data,year){
   // paint begins 1967 (the territories), the headline keeps the 1988 proclamation — the record is not
   // 'not mapped yet' in 1975. (228) GENERALISED: mapStartOf reads the earlier of the adopted headline
   // founding and the first full paint for everyone, so Benin in 1950 is 'Dahomey (France) · 1945 – 1960
-  // · part of Benin', not 'not mapped yet — appears in 1960' over a painted polity (58 records at the 227 data).
+  // · part of Benin', not 'not mapped yet — appears in 1960' over a painted polity (57 records at the 228 data, (229)).
   const mapStart=mapStartOf(c);
   const preBorn=year<mapStart;
   const eraName=preBorn?plainName(c.segOf||c.name):nameAtYear(c,year);
