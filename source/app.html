@@ -4265,14 +4265,29 @@ function dispDates(c){
   return [b,d];
 }
 function dispSpan(c){ const [b,d]=dispDates(c); return (fmtY(b)+" – "+(c.aliveNow?"present":fmtY(d))).replace(/ /g,"\u00A0"); }
+// (228) THE PANEL'S MAP START. civAt paints a record at FULL alpha from min(born, first frame),
+// while the headline may ADOPT a later Wikidata founding (dispDates: up to 25y after born). 57
+// records carry one — Benin's frames and its 'Dahomey (France)' era run from 1945 under a 1960
+// headline, Bavaria's electorate frames from 1783 under the 1806 kingdom, Papua New Guinea's
+// frames from 1715 under 1880 — and the pre-born test read the HEADLINE, so the panel said
+// 'not mapped yet' over a fully painted polity for 15 to 165 years. The panel start is now the
+// EARLIER of the adopted founding and the first full paint (or the baked `pb` where a record
+// carries one: Palestine). SCOPE (228b, reviewer): this fixes FALSE pre-born warnings over full
+// paint; it is not a universal "the map is unpainted" test — an adopted headline EARLIER than the
+// first paint is kept as before (the min), and the fade shoulder before the start stays pre-born
+// as (169 H3) intended. 58 records at the 227 data (the enrichment-inception fallback counts Funj).
+function mapStartOf(c){
+  if(c.pb!=null) return c.pb;
+  return Math.min(dispDates(c)[0], c.born, c.frames[0][0]);
+}
 // (168/169) real chapter dates for records with a CURATED era chain (`neC` — hand-sourced
 // rupture years, never frame-midpoint artifacts). Era one substitutes the record's display
 // founding; the last era runs to the record's own display end. Null for everyone else.
 function eraSpanOf(c,yr){
   if(!(c.neC&&c.nameEras)) return null;
   let i=0; while(i<c.nameEras.length-1&&c.nameEras[i+1][0]<=yr) i++;
-  const [db,de]=dispDates(c);
-  const from=i===0?(c.pb!=null?c.pb:db):c.nameEras[i][0]; // (226) pb: the first era starts where the map paints
+  const de=dispDates(c)[1];
+  const from=i===0?mapStartOf(c):c.nameEras[i][0]; // (226/228) era one starts where the map paints (pb, else the earlier of headline and first frame)
   const to=i<c.nameEras.length-1?fmtY(c.nameEras[i+1][0]):(c.aliveNow?"present":fmtY(de));
   return `${fmtY(from)} – ${to}`.replace(/ /g,"\u00A0");
 }
@@ -4790,8 +4805,10 @@ function updatePanelYear(c,data,year){
   // name, one line says when it appears, and the year-keyed sections go quiet.
   // (226) `pb` = the baked panel start where it differs from the adopted headline date: Palestine's map
   // paint begins 1967 (the territories), the headline keeps the 1988 proclamation — the record is not
-  // 'not mapped yet' in 1975. Only records carrying pb change; everyone else reads dispDates as before.
-  const mapStart=c.pb!=null?c.pb:dispDates(c)[0];
+  // 'not mapped yet' in 1975. (228) GENERALISED: mapStartOf reads the earlier of the adopted headline
+  // founding and the first full paint for everyone, so Benin in 1950 is 'Dahomey (France) · 1945 – 1960
+  // · part of Benin', not 'not mapped yet — appears in 1960' over a painted polity (58 records at the 227 data).
+  const mapStart=mapStartOf(c);
   const preBorn=year<mapStart;
   const eraName=preBorn?plainName(c.segOf||c.name):nameAtYear(c,year);
   // (202) B4-N1: a dated endonym series ([[year, line]...], e.g. N. Macedonia's
@@ -4804,7 +4821,22 @@ function updatePanelYear(c,data,year){
   // change in an OPEN panel that crosses a status boundary (1994 → 2005, 1981 → 1982's expiry, pre-born in or
   // out) re-renders it — the (226f) review caught the note frozen on the opening year (reloads hid it).
   const stRow=statusRowFor(c,data,year,preBorn), stKey=stRow?stRow[0]+":"+(stRow[1]==null?"":stRow[1]):"";
-  const tEl=$("pcTitle"), tKey=eraName+"|"+preBorn+"|"+(endoTxt||"")+"|"+stKey;
+  // (228b, reviewer's recommendation) EARLIER MAP COVERAGE: inside the band where the map paints a record
+  // BEFORE its headline period (Bavaria 1783–1805 under 1806 – 1918; Papua New Guinea 1715–1879 under
+  // 1880 – present; Funj 1492–1504 under 1505) and no dated era line already explains it, one quiet line
+  // names the mapped start. It claims no founding, independence or period name — only coverage. It joins
+  // the cache key: Bavaria's TITLE does not change across 1806, so a key without it would leave the line
+  // stale in an open panel (the (226h) lesson).
+  const lineageN=c.segOf||c.name, eraLine=!preBorn&&eraName!==c.name&&eraName!==lineageN;
+  // (228c, R228b-01) only a DATED chapter line (eraSpanOf: a curated chain) explains the band; an undated relationship
+  // label ("part of Hindu kingdoms" on the 1947 India segment, mapped from 1938) does not, so it keeps its text and the
+  // coverage is APPENDED. The dated line is resolved here, once, and rendered below. (228d, R228c-01) a span that is
+  // COMPUTED but not RENDERED explains nothing: the chapter line only renders when the era name differs (eraLine), and
+  // Central African Republic / Congo take their record names in 1958 under a 1960 headline — so the test is the line
+  // actually displayed, eraLine && spT, never spT alone.
+  const spT=preBorn?null:eraSpanOf(c,year);
+  const earlyCov=!preBorn&&!(eraLine&&spT)&&year<dispDates(c)[0];
+  const tEl=$("pcTitle"), tKey=eraName+"|"+preBorn+"|"+(endoTxt||"")+"|"+stKey+"|"+(earlyCov?"ec":"");
   if(tEl._k!==tKey){
     tEl._k=tKey;
     tEl.textContent=eraName;
@@ -4818,12 +4850,14 @@ function updatePanelYear(c,data,year){
     const endo=endoTxt?`<div style="font-size:12px;color:var(--ink-dim);font-style:italic;margin-top:3px;overflow-wrap:anywhere">In their own language: ${esc(endoTxt)}</div>`:"";
     // (169 D6) touch users never meet the hover card, so the chapter line lives here
     // too: curated chapter dates + the parent story, same grammar as the tooltip
-    const sp=preBorn?null:eraSpanOf(c,year);
+    const sp=spT;
     $("pcSub").innerHTML = (preBorn
       ? `<div class="pc-eyebrow" style="color:var(--ink-faint);margin-top:2px">not mapped yet — appears on this map in ${fmtY(mapStart)}</div>`
-      : (eraName!==c.name&&eraName!==lineage)
-      ? `<div class="pc-eyebrow" style="color:var(--ink-faint);margin-top:2px">${sp?`${sp} · `:""}${c.pbl?esc(c.pbl):`part of ${esc(lineage)}`}</div>` : "")
-      +statusLine(c,data,year,preBorn)+endo; // (226d) pbl: the labelled second date; statusLine: the dated status note in force
+      : eraLine
+      ? `<div class="pc-eyebrow" style="color:var(--ink-faint);margin-top:2px">${sp?`${sp} · `:""}${c.pbl?esc(c.pbl):`part of ${esc(lineage)}`}${earlyCov?` · Earlier map coverage · from ${fmtY(mapStart)}`:""}</div>`
+      : earlyCov
+      ? `<div class="pc-eyebrow" style="color:var(--ink-faint);margin-top:2px">Earlier map coverage · from ${fmtY(mapStart)}</div>` : "")
+      +statusLine(c,data,year,preBorn)+endo; // (226d) pbl: the labelled second date; statusLine: the dated status note in force; (228b) earlyCov: the earlier-coverage line
   }
   // (197 L1) era-scoped lineage: the Before-chip set depends on the viewed year
   // (linRows filters future-dated transitions), so crossing a transition year
