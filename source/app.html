@@ -1960,6 +1960,27 @@ const CITIES_CURATED=[
 ];
 let CITIES=(ENRICH_RAW&&ENRICH_RAW.cities&&ENRICH_RAW.cities.length)?ENRICH_RAW.cities
   :(ENRICH_STATE==="failed"?CITIES_CURATED:[]); // pending boots hold empty — curated only when the payload definitively failed
+// (230e) CITY ELIGIBILITY INDEX. renderCities memoises on a 2-year time key so a scrub
+// never rebuilds ~800 dots per frame — but a dot's presence is an EXACT test
+// (year < ct.f hides it), and 99 CE and 100 CE share a key: a one-year seek across
+// Hebron's threshold returned early and kept the previous frame's dots (round-230d
+// review, R230d-02; reproduced on release 229 at Hebron's old population threshold).
+// The key now also carries the COUNT of thresholds <= year, read by binary search
+// from a SORTED COPY of the thresholds — CITIES itself is never reordered — so any
+// crossing (forward or back, several cities on one year included) changes the key,
+// while the 2-year memo still covers every frame between crossings. The index is
+// rebuilt wherever CITIES is replaced: here at boot, and in applyEnrichment().
+let CITY_F=[];
+function cityIndex(){
+  CITY_F=CITIES.map(ct=>+ct.f).filter(Number.isFinite).sort((a,b)=>a-b);
+  renderCities._k=null;
+}
+function cityLiveCount(year){
+  let lo=0,hi=CITY_F.length;
+  while(lo<hi){ const m=(lo+hi)>>1; if(CITY_F[m]<=year) lo=m+1; else hi=m; }
+  return lo;
+}
+cityIndex();
 // ---- map layers: wars / cities / event dots are OVERLAYS the user can switch off
 // (unlike religion, which is an exclusive color MODE). Defaults lean anti-clutter for
 // the full-dataset future: cities start OFF. Prefs persist like the sound setting.
@@ -2154,9 +2175,10 @@ function renderCities(year){
     gCity.attr("tabindex",null).attr("role",null).attr("aria-label",null);
     renderCities._nav=null; return; }
   // recompute only when time moved >=2yr or the camera changed — a per-frame
-  // rebuild of ~600 dots cost 10x the whole draw (48ms/frame while scrubbing)
+  // rebuild of ~600 dots cost 10x the whole draw (48ms/frame while scrubbing).
+  // (230e) …or when a city crossed its threshold: cityLiveCount() is in the key.
   const zt=d3.zoomTransform(svg.node());
-  const key=Math.round(year/2)+"|"+zt.k.toFixed(2)+"|"+Math.round(zt.x)+"|"+Math.round(zt.y)+"|"+W+"x"+H;
+  const key=Math.round(year/2)+"|"+cityLiveCount(year)+"|"+zt.k.toFixed(2)+"|"+Math.round(zt.x)+"|"+Math.round(zt.y)+"|"+W+"x"+H;
   if(renderCities._k===key) return;
   renderCities._k=key;
   let live=CITIES.map(ct=>{
@@ -3547,10 +3569,27 @@ function armTouchTipHide(){
   if(lastPointerType==="touch") armTouchTipHide._t=setTimeout(hideTip,3500);
 }
 function placeTip(ev){
-  const r=stage.getBoundingClientRect();
-  let x=ev.clientX-r.left+14,y=ev.clientY-r.top+14;
-  if(x>r.width-256)x=ev.clientX-r.left-250;
-  if(y>r.height-150)y=ev.clientY-r.top-140;
+  // (230e) FIT THE TOOLTIP, DON'T GUESS ITS SIZE. The old version flipped the tip to
+  // the pointer's other side on fixed 256/250 px offsets and never clamped — near a
+  // phone's centre neither side fits a 240 px tip, and Bethlehem's evidence label
+  // opened at x ≈ −71 on a 360 px screen (round-230d review, R230d-01; the same on
+  // release 229). Now: measure the rendered tip at the stage's left edge (so the
+  // shrink-to-fit width is the final wrapped width, not one squeezed against the
+  // right edge), prefer below-right of the pointer, flip a side only when it does
+  // not fit, then clamp into the stage ∩ visible viewport with a small margin. The
+  // reviewed words and type size are untouched; only the position moves.
+  const r=stage.getBoundingClientRect(), m=8;
+  tip.style.left="0px"; tip.style.top="0px";
+  const tw=tip.offsetWidth, th=tip.offsetHeight;
+  const vw=document.documentElement.clientWidth, vh=document.documentElement.clientHeight;
+  const minX=Math.max(0,-r.left)+m, maxX=Math.min(r.width,vw-r.left)-m;   // usable box in stage coords
+  const minY=Math.max(0,-r.top)+m,  maxY=Math.min(r.height,vh-r.top)-m;
+  const px=ev.clientX-r.left, py=ev.clientY-r.top;
+  let x=px+14, y=py+14;
+  if(x+tw>maxX) x=px-14-tw;
+  if(y+th>maxY) y=py-14-th;
+  x=Math.max(minX,Math.min(x,maxX-tw));
+  y=Math.max(minY,Math.min(y,maxY-th));
   tip.style.left=x+"px";tip.style.top=y+"px";
 }
 function hideTip(){ tip.classList.remove("on"); }
@@ -3670,7 +3709,11 @@ const fmtPop=p=>{ if(p>=9.5e5) return (p/1e6).toFixed(1).replace(/\.0$/,"")+" mi
 // (215b, reviewer) a population observation is NOT a historical first attestation:
 // when the anchor is a population year the words say the founding date is
 // unavailable and name the earliest population data in THIS dataset.
-const cityAnchor=ct=>ct.fk==="pop"?`founding date unavailable · earliest population data in this dataset: ${fmtYear(ct.f)}`:`founded ${fmtYear(ct.f)}`;
+// (230) fk "att": a reviewed, sourced existence bound (plan item 19, SOURCE half). (230d, round-230 review) the dot
+// appears from the earliest suitable evidence the cited source states; `at` is the whole evidence clause + source from
+// the data and the anchor year `f` is NEVER printed for it (a period-end or an approximate rendering anchor is a display
+// convention, not a date) — and never "founded".
+const cityAnchor=ct=>ct.fk==="att"?`founding date unavailable · ${ct.at}`:ct.fk==="pop"?`founding date unavailable · earliest population data in this dataset: ${fmtYear(ct.f)}`:`founded ${fmtYear(ct.f)}`;
 // population words — one function for the tooltip AND the accessible name, from the
 // same calculation as the dot size (cityPopAt): "figure", never "count"
 const cityPopText=(ct,year)=>{ const r=cityPopAt(ct,year); if(!r) return "";
@@ -3682,7 +3725,7 @@ const cityAria=ct=>{ const y=yearAt(+scrub.value), t=cityPopText(ct,y);
 function showCityTip(ev,d){
   const y=yearAt(+scrub.value), t=cityPopText(d.ct,y);
   tip.innerHTML=`<div class="t-name">${esc(d.ct.n)}</div>
-    <div class="t-span">${cityAnchor(d.ct)}</div>
+    <div class="t-span">${esc(cityAnchor(d.ct))}</div>
     ${t?`<div class="t-desc">${esc(t)}</div>`:""}`;
   tip.classList.add("on");
   tip._evQid=null; tip._city=d.ct.n; tip._war=null;
@@ -7442,6 +7485,7 @@ function applyEnrichment(enr){
   OCC_BUCKETS=(ENRICH_RAW&&ENRICH_RAW.occB)||null;
   WARS=(ENRICH_RAW&&ENRICH_RAW.conflicts&&ENRICH_RAW.conflicts.length)?ENRICH_RAW.conflicts:null;
   CITIES=(ENRICH_RAW&&ENRICH_RAW.cities&&ENRICH_RAW.cities.length)?ENRICH_RAW.cities:CITIES_CURATED;
+  cityIndex();          // (230e) the sorted threshold copy follows the replaced city set
   enrichLocal();        // _wd extracts/coverage/inception + full repaint (arcs/dots pick up the new tables)
   rebuildAmbient();     // the ambient discovery layer now sees the baked pool
   funEvents._pool=null; funRulers._pool=null; // a dice pool built mid-flight must never survive arrival
