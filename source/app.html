@@ -3576,20 +3576,45 @@ function placeTip(ev){
   // release 229). Now: measure the rendered tip at the stage's left edge (so the
   // shrink-to-fit width is the final wrapped width, not one squeezed against the
   // right edge), prefer below-right of the pointer, flip a side only when it does
-  // not fit, then clamp into the stage ∩ visible viewport with a small margin. The
-  // reviewed words and type size are untouched; only the position moves.
-  const r=stage.getBoundingClientRect(), m=8;
-  tip.style.left="0px"; tip.style.top="0px";
-  const tw=tip.offsetWidth, th=tip.offsetHeight;
-  const vw=document.documentElement.clientWidth, vh=document.documentElement.clientHeight;
-  const minX=Math.max(0,-r.left)+m, maxX=Math.min(r.width,vw-r.left)-m;   // usable box in stage coords
-  const minY=Math.max(0,-r.top)+m,  maxY=Math.min(r.height,vh-r.top)-m;
+  // not fit, then clamp into the usable box with a small margin. The reviewed words
+  // and type size are untouched.
+  // (231) WIDEN BEFORE YOU PLACE. A position rule cannot shrink a box: on a phone held
+  // sideways (844×390) with enlarged type, Bethlehem's tip measured 327 px in a 236 px
+  // box, so the clamp pinned it to the top and it ran over the transport and past the
+  // viewport (round-230e review, nonblocking follow-up). When the measured tip is
+  // taller than the box, try more width first — the same words at the same type size
+  // on fewer lines: 360, then 480, then the whole box width — and keep the first
+  // width that fits. When no width fits (a very short box with very large type) the
+  // EXPLICIT FALLBACK is the box's top-left corner at full box width, flagged with
+  // .tip-over: the name and the first lines read inside the box and the rest runs
+  // down over the transport controls — a transient, pointer-inert tooltip may cover
+  // them for a moment, but nothing is ever clipped from the top. The box is the stage
+  // ∩ the VISUAL viewport (a pinch-zoomed phone reports the magnified part through
+  // visualViewport; browsers without it fall back to the layout viewport), and a box
+  // narrower than the tip wraps the tip to the box first.
+  const r=stage.getBoundingClientRect(), m=8, vv=window.visualViewport;
+  const vx0=vv?vv.offsetLeft:0, vy0=vv?vv.offsetTop:0;
+  const vx1=vv?vv.offsetLeft+vv.width:document.documentElement.clientWidth;
+  const vy1=vv?vv.offsetTop+vv.height:document.documentElement.clientHeight;
+  const minX=Math.max(0,vx0-r.left)+m, maxX=Math.min(r.width,vx1-r.left)-m;   // usable box in stage coords
+  const minY=Math.max(0,vy0-r.top)+m,  maxY=Math.min(r.height,vy1-r.top)-m;
+  const boxW=maxX-minX, boxH=maxY-minY;
+  tip.style.left="0px"; tip.style.top="0px"; tip.style.maxWidth="";
+  let tw=tip.offsetWidth, th=tip.offsetHeight;
+  if(tw>boxW&&boxW>0){ tip.style.maxWidth=Math.floor(boxW)+"px"; tw=tip.offsetWidth; th=tip.offsetHeight; } // a box narrower than the tip (a pinch-zoomed phone): wrap to the box
+  for(const w of [360,480,boxW]){ // only a too-tall tip widens, and only within the box
+    if(th<=boxH||w<=tw||w>boxW) continue;
+    tip.style.maxWidth=Math.floor(w)+"px"; tw=tip.offsetWidth; th=tip.offsetHeight;
+  }
+  const over=th>boxH;
+  tip.classList.toggle("tip-over",over);
   const px=ev.clientX-r.left, py=ev.clientY-r.top;
   let x=px+14, y=py+14;
   if(x+tw>maxX) x=px-14-tw;
   if(y+th>maxY) y=py-14-th;
   x=Math.max(minX,Math.min(x,maxX-tw));
   y=Math.max(minY,Math.min(y,maxY-th));
+  if(over){ x=minX; y=minY; } // the fallback shape is a rule, not an accident of the clamp
   tip.style.left=x+"px";tip.style.top=y+"px";
 }
 function hideTip(){ tip.classList.remove("on"); }
